@@ -1,11 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
+import authRouter from './routes/auth.route.js'
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/Gursha';
 const app = express();
+
+//use routes
+app.use('/api/auth', authRouter);
 
 //connect to database
 connectDB(MONGO_URI);
