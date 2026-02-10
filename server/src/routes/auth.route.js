@@ -1,5 +1,6 @@
 import express from "express";
 import { check } from "express-validator";
+import authMiddleware from "../middleware/auth.middleware.js";
 import {
     registerUser,
     loginUser,
@@ -7,6 +8,7 @@ import {
 } from "../controllers/auth.controller.js";
 
 const authRouter = express.Router();
+
 
 //@router POST /api/auth/register
 //@desc Register a new user
@@ -36,6 +38,9 @@ authRouter.post(
     loginUser,
 );
 
-authRouter.get("/me", getCurrentUser);
+//@router GET /api/auth/me
+//@desc Get current user
+//@access Private
+authRouter.get("/me", authMiddleware, getCurrentUser);
 
 export default authRouter;

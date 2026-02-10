@@ -88,7 +88,20 @@ export async function loginUser(req, res) {
     }
 }
 
-export function getCurrentUser(req, res) {
-    // Logic to get current user info here
-    return res.status(200).json({ message: "Current user info" });
+export async function getCurrentUser(req, res) {
+    // req.user is set by authMiddleware
+    const { userId } = req.user;
+
+    // Get user info
+    try {
+        const user = await User.findById(userId).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({ message: "Current user info", user });
+    } catch (error) {
+        console.error("Get current user error:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
 }
