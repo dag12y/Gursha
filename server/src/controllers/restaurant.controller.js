@@ -63,12 +63,69 @@ export async function createRestaurant(req, res) {
     }
 }
 
-export function updateRestaurant(req, res) {
-    const {id} = req.params;
-    return res.status(200).json({message: `Restaurant with id ${id} updated successfully`});
+export async function updateRestaurant(req, res) {
+    //destructure body
+    const { id } = req.params;
+    const {
+        name,
+        location,
+        cuisine,
+        priceRange,
+        hours,
+        menu,
+        photos,
+        tables,
+        staff,
+    } = req.body;
+
+    // Build update object with only provided fields
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (location) updateData.location = location;
+    if (cuisine) updateData.cuisine = cuisine;
+    if (priceRange) updateData.priceRange = priceRange;
+    if (hours) updateData.hours = hours;
+    if (menu) updateData.menu = menu;
+    if (photos) updateData.photos = photos;
+    if (tables) updateData.tables = tables;
+    if (staff) updateData.staff = staff;
+
+    try {
+        //find restaurant by id and update the data
+        const restaurant = await Restaurant.findByIdAndUpdate(id, updateData, {
+            returnDocument: 'after', // Return the updated document
+        });
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        return res.status(200).json({
+            message: `Restaurant with id ${id} updated successfully`,
+            restaurant,
+        });
+    } catch (error) {
+        if(error.kind === 'ObjectId') {
+            return res.status(400).json({ message: 'Invalid restaurant ID' });
+        }
+        console.error(error);
+        return res.status(500).json({ message: "Server error" ,error:error.message});
+    }
 }
 
-export function deleteRestaurant(req, res) {
+export async function deleteRestaurant(req, res) {
     const {id} = req.params;
+    try {
+        //find restaurant by id and delete it
+        const restaurant = await Restaurant.findByIdAndDelete(id);
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+    } catch (error) {
+        if (error.kind === 'ObjectId') { 
+            return res.status(400).json({ message: 'Invalid restaurant ID' });
+        }
+        console.error(error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
     return res.status(200).json({message: `Restaurant with id ${id} deleted successfully`});
 }

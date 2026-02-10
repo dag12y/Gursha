@@ -38,7 +38,13 @@ restaurantRouter.post(
     createRestaurant,
 );
 
+
+//@route PUT api/restaurants/:id
+//@desc Update restaurant by id
 restaurantRouter.put("/:id", authMiddleware, isAdmin, updateRestaurant);
+
+//@route DELETE api/restaurants/:id
+//@desc Delete restaurant by id
 restaurantRouter.delete("/:id", authMiddleware, isAdmin, deleteRestaurant);
 
 export default restaurantRouter;
