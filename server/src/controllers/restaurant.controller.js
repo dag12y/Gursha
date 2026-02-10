@@ -1,4 +1,5 @@
 import Restaurant from '../models/Restaurant.js';
+import { validationResult } from 'express-validator';
 
 export async function getAllRestaurants(req, res) {
     try {
@@ -27,8 +28,39 @@ export async function getRestaurantById(req, res) {
     }
 }
 
-export function createRestaurant(req, res) {
-    return res.status(201).json({message: 'Restaurant created successfully'});
+export async function createRestaurant(req, res) {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Destructure body
+    const { name, location, cuisine, priceRange, hours, menu, photos } =
+        req.body;
+
+    try {
+        // Create restaurant
+        const restaurant = await Restaurant.create({
+            name,
+            location,
+            cuisine,
+            priceRange,
+            hours,
+            menu,
+            photos,
+            // tables and staff can be empty initially
+        });
+
+        // Return created restaurant
+        return res.status(201).json({
+            message: "Restaurant created successfully",
+            restaurant,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
+    }
 }
 
 export function updateRestaurant(req, res) {
