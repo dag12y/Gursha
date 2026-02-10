@@ -7,7 +7,15 @@ import { createRestaurant, getAllRestaurants, getRestaurantById, updateRestauran
 const restaurantRouter = express.Router();
 
 //@access Public
+
+
+//@route Get api/restaurants/
+//@desc Get all restaurants
 restaurantRouter.get('/', getAllRestaurants);
+
+
+//@route Get api/restaurants/:id
+//@desc Get restaurant by id
 restaurantRouter.get('/:id', getRestaurantById);
 
 //@access Private
