@@ -1,6 +1,10 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export async function registerUser(req, res) {
     try {
@@ -40,13 +44,15 @@ export async function registerUser(req, res) {
         });
     } catch (error) {
         console.error("Register error:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
+        return res
+            .status(500)
+            .json({ message: "Server error", error: error.message });
     }
 }
 
 export async function loginUser(req, res) {
     try {
-            // 1. Validate input
+        // 1. Validate input
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -55,23 +61,30 @@ export async function loginUser(req, res) {
         const { email, password } = req.body;
 
         // 2. Check if user exists
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
         // 3. Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // 4. Generate token (not implemented here)
-        return res.status(200).json({ message: "User logged in successfully" });
+        // 4. Generate token
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+            expiresIn: "1d",
+        });
+
+        return res
+            .status(200)
+            .json({ message: "User logged in successfully", token });
     } catch (error) {
         console.error("Login error:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
-        
+        return res
+            .status(500)
+            .json({ message: "Server error", error: error.message });
     }
 }
 
