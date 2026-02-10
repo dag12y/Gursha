@@ -8,6 +8,9 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/Gursha';
 const app = express();
 
+// Middleware
+app.use(express.json());
+
 //use routes
 app.use('/api/auth', authRouter);
 
