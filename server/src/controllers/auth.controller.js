@@ -30,7 +30,7 @@ export async function registerUser(req, res) {
         });
 
         // 5. Response
-        res.status(201).json({
+        return res.status(201).json({
             message: "User registered successfully",
             user: {
                 id: user._id,
@@ -40,16 +40,42 @@ export async function registerUser(req, res) {
         });
     } catch (error) {
         console.error("Register error:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 
-export function loginUser(req, res) {
-    // Login logic here
-    res.status(200).json({ message: "User logged in successfully" });
+export async function loginUser(req, res) {
+    try {
+            // 1. Validate input
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { email, password } = req.body;
+
+        // 2. Check if user exists
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // 3. Check password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // 4. Generate token (not implemented here)
+        return res.status(200).json({ message: "User logged in successfully" });
+    } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+        
+    }
 }
 
 export function getCurrentUser(req, res) {
     // Logic to get current user info here
-    res.status(200).json({ message: "Current user info" });
+    return res.status(200).json({ message: "Current user info" });
 }
