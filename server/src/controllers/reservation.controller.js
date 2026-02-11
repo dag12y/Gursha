@@ -68,7 +68,12 @@ export async function createReservation(req, res) {
             .json({ message: "Reservation created successfully", reservation });
     } catch (error) {
         console.error("Error creating reservation:", error);
-        //handle duplicate index error
+        // Handle invalid ObjectId
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
+
+        // Handle duplicate index error
         if (error.code === 11000) {
             return res.status(400).json({
                 message:
@@ -81,14 +86,50 @@ export async function createReservation(req, res) {
     }
 }
 
-export function getMyReservations(req, res) {
-    return res.status(200).json({ message: "List of my reservations" });
+export async function getMyReservations(req, res) {
+    try {
+        // Fetch reservations for the logged-in user and populate restaurant and table details
+        const reservations = await Reservation.find({ user: req.user.userId }).populate("restaurant",'name').populate("table",'name capacity');
+
+        //check if reservations exist
+        if (!reservations || reservations.length === 0) {
+            return res.status(404).json({ message: "No reservations found" });
+        }
+
+        return res.status(200).json({ reservations });
+    } catch (error) {
+        console.error("Error fetching reservations:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
 }
 
-export function cancelReservation(req, res) {
-    return res
-        .status(200)
-        .json({ message: "Reservation cancelled successfully" });
+export async function cancelReservation(req, res) {
+    const reservationId = req.params.id;
+    try {
+        // Find the reservation by ID
+        const reservation = await Reservation.findById(reservationId);
+        if (!reservation) {
+            return res.status(404).json({ message: "Reservation not found" });
+        }
+
+        // Check if the user is the owner of the reservation
+        if (reservation.user.toString() !== req.user.userId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Update the reservation status to canceled
+        reservation.status = "Cancelled";
+        await reservation.save();
+
+        return res.status(200).json({ message: "Reservation canceled successfully" });
+    } catch (error) {
+        console.error("Error canceling reservation:", error);
+        // Handle invalid ObjectId
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid reservation ID format" });
+        }
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
 }
 
 export function getRestaurantReservations(req, res) {
