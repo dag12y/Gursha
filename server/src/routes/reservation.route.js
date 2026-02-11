@@ -8,12 +8,19 @@ import {
     getRestaurantReservations,
     updateReservationStatus,
 } from "../controllers/reservation.controller.js";
+import { check } from "express-validator";
 
 const reservationRouter = express.Router();
 
 //@access private, diner routes
 
-reservationRouter.post("/", authMiddleware, createReservation);
+reservationRouter.post("/", authMiddleware, [
+    check('restaurant', 'Restaurant ID is required').not().isEmpty(),
+    check('table', 'Table ID is required').not().isEmpty(),
+    check('date', 'Reservation date is required').not().isEmpty(),
+    check('time', 'Reservation time is required').not().isEmpty(),
+    check('partySize', 'Party size is required and must be a number').isInt({ min: 1 }),
+],createReservation);
 reservationRouter.get("/my", authMiddleware, getMyReservations);
 reservationRouter.put("/cancel/:id", authMiddleware, cancelReservation);
 
