@@ -37,16 +37,23 @@ reservationRouter.put("/cancel/:id", authMiddleware, cancelReservation);
 
 //@access private, staff routes
 
+
+//@route Get api/reservations/restaurant/:restaurantId
+//@desc Get reservations for a restaurant
 reservationRouter.get(
     "/restaurant/:restaurantId",
     authMiddleware,
     isStaff,
     getRestaurantReservations,
 );
+
+//@route Put api/reservations/status/:id
+//@desc Update reservation status
 reservationRouter.put(
     "/status/:id",
     authMiddleware,
     isStaff,
+    [check('status', 'Status is required and must be one of Pending, Confirmed, Seated, Completed, Cancelled').isIn(['Pending', 'Confirmed', 'Seated', 'Completed', 'Cancelled'])],
     updateReservationStatus,
 );
 

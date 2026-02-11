@@ -132,14 +132,57 @@ export async function cancelReservation(req, res) {
     }
 }
 
-export function getRestaurantReservations(req, res) {
-    return res
-        .status(200)
-        .json({ message: "List of reservations for the restaurant" });
+export async function getRestaurantReservations(req, res) {
+    const restaurantId = req.params.restaurantId;
+    try {
+        //find reservations for the restaurant
+        const reservations = await Reservation.find({ restaurant: restaurantId }).populate("table",'name capacity').populate("user",'name email');
+        
+        //check if reservations exist
+        if (!reservations || reservations.length === 0) {
+            return res.status(404).json({ message: "No reservations found for this restaurant" });
+        }
+
+        return res.status(200).json({ message: "Reservations fetched successfully", reservations });
+
+    } catch (error) {
+        console.error("Error fetching restaurant reservations:", error);
+        // Handle invalid ObjectId
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid restaurant ID format" });
+        }
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
 }
 
-export function updateReservationStatus(req, res) {
-    return res
-        .status(200)
-        .json({ message: "Reservation status updated successfully" });
+export async function updateReservationStatus(req, res) {
+    const reservationId = req.params.id;
+    try {
+        //validate request body 
+        const errors = validationResult(req);   
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }   
+
+        const { status } = req.body;
+
+        //find reservation by ID
+        const reservation = await Reservation.findById(reservationId);
+        if (!reservation) {
+            return res.status(404).json({ message: "Reservation not found" });
+        }
+
+        //update reservation status
+        reservation.status = status;
+        await reservation.save();
+
+        return res.status(200).json({ message: "Reservation status updated successfully" ,reservation});
+    } catch (error) {
+        console.error("Error updating reservation status:", error);
+        // Handle invalid ObjectId
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid reservation ID format" });
+        }
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
 }
