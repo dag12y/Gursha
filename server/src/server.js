@@ -4,6 +4,7 @@ import connectDB from './config/db.js';
 import authRouter from './routes/auth.route.js'
 import restaurantRouter from './routes/restaurant.route.js';
 import tableRouter from './routes/table.route.js';
+import reservationRouter from './routes/reservation.route.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/restaurants', restaurantRouter);
 app.use('/api/tables', tableRouter);
+app.use('/api/reservations', reservationRouter);
 
 //connect to database
 connectDB(MONGO_URI);
