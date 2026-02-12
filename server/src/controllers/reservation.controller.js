@@ -4,70 +4,70 @@ import Table from "../models/Table.js";
 import { validationResult } from "express-validator";
 
 export async function createReservation(req, res) {
-    // Validate request body
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-    try {
-        const { restaurant, table, date, time, partySize } = req.body;
 
-        //check if restaurant exists
+    try {
+        const { restaurant, date, time, partySize } = req.body;
+
+        // Check restaurant exists
         const restaurantExists = await Restaurant.findById(restaurant);
         if (!restaurantExists) {
             return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        //check if table exists
-        const tableExists = await Table.findById(table);
-        if (!tableExists) {
-            return res.status(404).json({ message: "Table not found" });
-        }
+        // Find tables that can accommodate party size
+        const candidateTables = await Table.find({
+            restaurant,
+            capacity: { $gte: partySize },
+        }).sort({ capacity: 1 });
 
-        //check if table belongs to the restaurant
-        if (tableExists.restaurant.toString() !== restaurant) {
-            return res
-                .status(400)
-                .json({ message: "Table does not belong to the restaurant" });
-        }
-
-        //check capacity
-        if (tableExists.capacity < partySize) {
-            return res
-                .status(400)
-                .json({ message: "Table capacity is less than party size" });
-        }
-
-        //check availability
-        const existingReservation = await Reservation.findOne({
-            table,
-            date,
-            time,
-            status: { $in: ["pending", "confirmed", "seated"] },
-        });
-
-        if (existingReservation) {
+        if (candidateTables.length === 0) {
             return res.status(400).json({
-                message:
-                    "Table is already reserved for the selected date and time",
+                message: "No tables available for this party size",
             });
         }
 
-        //create reservation
+        // Find reserved tables at that date/time
+        const reservedTables = await Reservation.find({
+            restaurant,
+            date,
+            time,
+            status: { $in: ["Pending", "Confirmed", "Seated"] },
+        }).select("table");
+
+        const reservedTableIds = reservedTables.map((r) => r.table.toString());
+
+        // Find first available table
+        const availableTable = candidateTables.find(
+            (table) => !reservedTableIds.includes(table._id.toString()),
+        );
+
+        if (!availableTable) {
+            return res.status(400).json({
+                message: "No available tables for selected time",
+            });
+        }
+
+        // Create reservation using AUTO selected table
         const reservation = await Reservation.create({
             restaurant,
-            table,
+            table: availableTable._id,
             date,
             time,
             partySize,
             user: req.user.userId,
         });
 
-        return res
-            .status(201)
-            .json({ message: "Reservation created successfully", reservation });
+        return res.status(201).json({
+            message: "Reservation created successfully",
+            reservation,
+        });
     } catch (error) {
         console.error("Error creating reservation:", error);
+        
         // Handle invalid ObjectId
         if (error.kind === "ObjectId") {
             return res.status(400).json({ message: "Invalid ID format" });
@@ -80,11 +80,14 @@ export async function createReservation(req, res) {
                     "Table is already reserved for the selected date and time",
             });
         }
-        return res
-            .status(500)
-            .json({ message: "Server error", error: error.message });
+
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
     }
 }
+
 
 export async function getMyReservations(req, res) {
     try {

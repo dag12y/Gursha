@@ -18,7 +18,6 @@ const reservationRouter = express.Router();
 //@desc Create a new reservation
 reservationRouter.post("/", authMiddleware, [
     check('restaurant', 'Restaurant ID is required').not().isEmpty(),
-    check('table', 'Table ID is required').not().isEmpty(),
     check('date', 'Reservation date is required').not().isEmpty(),
     check('time', 'Reservation time is required').not().isEmpty(),
     check('partySize', 'Party size is required and must be a number').isInt({ min: 1 }),
