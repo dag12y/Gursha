@@ -17,12 +17,12 @@ const reservationSchema = new mongoose.Schema(
             ref: "Table",
             required: true,
         },
-        date: {
+        startTime: {
             type: Date,
             required: true,
         },
-        time: {
-            type: String,
+        endTime: {
+            type: Date,
             required: true,
         },
         partySize: {
@@ -37,9 +37,6 @@ const reservationSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
-
-// Prevent double booking of same table at same date/time
-reservationSchema.index({ table: 1, date: 1, time: 1 }, { unique: true });
 
 const Reservation = mongoose.model("Reservation", reservationSchema);
 export default Reservation;

@@ -12,6 +12,13 @@ export async function createReservation(req, res) {
     try {
         const { restaurant, date, time, partySize } = req.body;
 
+        // Combine date + time
+        const startTime = new Date(`${date}T${time}:00`);
+
+        // Add 2 hours
+        const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+
+
         // Check restaurant exists
         const restaurantExists = await Restaurant.findById(restaurant);
         if (!restaurantExists) {
@@ -33,10 +40,11 @@ export async function createReservation(req, res) {
         // Find reserved tables at that date/time
         const reservedTables = await Reservation.find({
             restaurant,
-            date,
-            time,
             status: { $in: ["Pending", "Confirmed", "Seated"] },
+            startTime: { $lt: endTime },
+            endTime: { $gt: startTime },
         }).select("table");
+
 
         const reservedTableIds = reservedTables.map((r) => r.table.toString());
 
@@ -51,15 +59,16 @@ export async function createReservation(req, res) {
             });
         }
 
-        // Create reservation using AUTO selected table
+        // Create reservation using AUTO selected table and Handle time conflict
         const reservation = await Reservation.create({
             restaurant,
             table: availableTable._id,
-            date,
-            time,
+            startTime,
+            endTime,
             partySize,
             user: req.user.userId,
         });
+
 
         return res.status(201).json({
             message: "Reservation created successfully",
