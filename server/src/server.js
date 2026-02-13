@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import connectDB from './config/db.js';
 import authRouter from './routes/auth.route.js'
 import restaurantRouter from './routes/restaurant.route.js';
@@ -10,6 +11,9 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/Gursha';
 const app = express();
+
+// Enable CORS
+app.use(cors());
 
 // Middleware
 app.use(express.json());
