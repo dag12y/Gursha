@@ -105,3 +105,45 @@ export async function getCurrentUser(req, res) {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
+export async function assignStaffRole(req, res) {
+    // Validate input
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        //get restaurantId and userId from request
+        const { restaurantId } = req.body;
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Update user
+        user.role = "staff";
+        user.restaurant = restaurantId;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: "User promoted to staff successfully",
+            user,
+        });
+    } catch (error) {
+        console.error("Error assigning staff role:", error);
+        
+        if(error.kind == "ObjectId"){
+            return res.status(400).json({
+                message:'Invalid Restaurant id.'
+            })
+        }
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
+    }
+}

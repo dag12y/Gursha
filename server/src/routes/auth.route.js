@@ -1,10 +1,12 @@
 import express from "express";
 import { check } from "express-validator";
 import authMiddleware from "../middleware/auth.middleware.js";
+import { isAdmin } from "../middleware/role.middleware.js";
 import {
     registerUser,
     loginUser,
     getCurrentUser,
+    assignStaffRole,
 } from "../controllers/auth.controller.js";
 
 const authRouter = express.Router();
@@ -39,8 +41,13 @@ authRouter.post(
 );
 
 //@router GET /api/auth/me
-//@desc Get current user
+//@desc get current user
 //@access Private
 authRouter.get("/me", authMiddleware, getCurrentUser);
+
+//@route Put /api/auth/assign-staff/:userId
+//@desc assign staff role to user
+//@access Private
+authRouter.put('/assign-staff/:userId', authMiddleware, isAdmin, assignStaffRole);
 
 export default authRouter;

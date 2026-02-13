@@ -145,7 +145,7 @@ export async function cancelReservation(req, res) {
 }
 
 export async function getRestaurantReservations(req, res) {
-    const restaurantId = req.params.restaurantId;
+    const restaurantId = req.restaurantId;
     try {
         //find reservations for the restaurant
         const reservations = await Reservation.find({ restaurant: restaurantId }).populate("table",'name capacity').populate("user",'name email');
@@ -159,10 +159,6 @@ export async function getRestaurantReservations(req, res) {
 
     } catch (error) {
         console.error("Error fetching restaurant reservations:", error);
-        // Handle invalid ObjectId
-        if (error.kind === "ObjectId") {
-            return res.status(400).json({ message: "Invalid restaurant ID format" });
-        }
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 }

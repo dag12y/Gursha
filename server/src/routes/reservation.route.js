@@ -40,7 +40,7 @@ reservationRouter.put("/cancel/:id", authMiddleware, cancelReservation);
 //@route Get api/reservations/restaurant/:restaurantId
 //@desc Get reservations for a restaurant
 reservationRouter.get(
-    "/restaurant/:restaurantId",
+    "/restaurant",
     authMiddleware,
     isStaff,
     getRestaurantReservations,
