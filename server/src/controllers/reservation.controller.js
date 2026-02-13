@@ -194,3 +194,105 @@ export async function updateReservationStatus(req, res) {
         return res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
+export async function getDashboardAnalytics(req, res) {
+    const restaurantId = req.restaurantId;
+
+    try {
+        // Total reservations (all time)
+        const totalReservations = await Reservation.countDocuments({
+            restaurant: restaurantId,
+        });
+
+        // Reservations last 7 days
+        const reservationsByDate = await Reservation.aggregate([
+            {
+                $match: {
+                    restaurant: restaurantId,
+                    startTime: {
+                        $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                    },
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$startTime",
+                        },
+                    },
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { _id: 1 } },
+        ]);
+
+        // Today's reservations (UTC safe version)
+        const startOfToday = new Date();
+        startOfToday.setUTCHours(0, 0, 0, 0);
+
+        const endOfToday = new Date();
+        endOfToday.setUTCHours(23, 59, 59, 999);
+
+        const todayReservations = await Reservation.countDocuments({
+            restaurant: restaurantId,
+            startTime: { $gte: startOfToday, $lte: endOfToday },
+        });
+
+        // Reservations by status
+        const reservationsByStatus = await Reservation.aggregate([
+            { $match: { restaurant: restaurantId } },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        // Most booked tables (top 5)
+        const mostBookedTables = await Reservation.aggregate([
+            { $match: { restaurant: restaurantId } },
+            {
+                $group: {
+                    _id: "$table",
+                    count: { $sum: 1 },
+                },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+            {
+                $lookup: {
+                    from: "tables",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "tableDetails",
+                },
+            },
+            { $unwind: "$tableDetails" },
+            {
+                $project: {
+                    _id: 0,
+                    tableId: "$_id",
+                    tableName: "$tableDetails.name",
+                    count: 1,
+                },
+            },
+        ]);
+
+        res.status(200).json({
+            totalReservations,
+            todayReservations,
+            reservationsByDate,
+            reservationsByStatus,
+            mostBookedTables,
+        });
+    } catch (error) {
+        console.error("Error fetching dashboard analytics:", error);
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
+    }
+}

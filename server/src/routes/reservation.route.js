@@ -7,6 +7,7 @@ import {
     cancelReservation,
     getRestaurantReservations,
     updateReservationStatus,
+    getDashboardAnalytics,
 } from "../controllers/reservation.controller.js";
 import { check } from "express-validator";
 
@@ -55,5 +56,16 @@ reservationRouter.put(
     [check('status', 'Status is required and must be one of Pending, Confirmed, Seated, Completed, Cancelled').isIn(['Pending', 'Confirmed', 'Seated', 'Completed', 'Cancelled'])],
     updateReservationStatus,
 );
+
+//@route Get api/reservations/restaurant/dashboard/
+//@desc Get reservation stats for restaurant dashboard
+//@access private, staff routes
+reservationRouter.get(
+    "/restaurant/dashboard",
+    authMiddleware,
+    isStaff,
+    getDashboardAnalytics, 
+);
+
 
 export default reservationRouter;
