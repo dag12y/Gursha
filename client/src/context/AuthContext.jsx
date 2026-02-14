@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { login as loginRequest } from "@/api/auth";
+import { login as loginRequest, register as registerRequest } from "@/api/auth";
 import { getToken, setToken } from "@/utils/auth";
 
 const AuthContext = createContext();
@@ -27,11 +27,18 @@ export function AuthProvider({ children }) {
         return response;
     }
 
+    async function register(name, email, password) {
+        const response = await registerRequest(name, email, password);
+        toast.success("Registered successfully!");
+        return response;
+    }
+
     const value = useMemo(
         () => ({
             token,
             user,
             login,
+            register,
             isAuthenticated: Boolean(token),
             setUser,
         }),
