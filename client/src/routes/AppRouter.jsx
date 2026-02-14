@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Restaurant from "../pages/diner/Restaurants";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function AppRouter() {
     return (
@@ -9,7 +10,14 @@ function AppRouter() {
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/restaurants" element={<Restaurant />} />
+            <Route
+                path="/restaurants"
+                element={
+                    <ProtectedRoute>
+                        <Restaurant />
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
     );
 }
