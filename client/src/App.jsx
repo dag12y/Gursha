@@ -1,8 +1,12 @@
 import AppRouter from "./routes/AppRouter";
+import { Toaster } from "sonner";
 
 function App() {
     return (
-        <AppRouter />
+        <>
+            <AppRouter />
+            <Toaster position="top-right" />
+        </>
     );
 }
 

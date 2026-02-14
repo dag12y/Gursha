@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
+import { Link, useNavigate } from "react-router";
+import { login } from "@/api/auth";
+import { toast } from "sonner";
+import { setToken } from "@/utils/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
     Card,
     CardContent,
@@ -14,13 +17,22 @@ import {
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log({
-            email,
-            password,
-        });
+        try {
+            const response = await login(email, password);
+            setToken(response.token);
+            navigate("/restaurants");
+        } catch (error) {
+            console.error("Login failed:", error);
+            toast.error(
+                error.response?.data?.message ||
+                    "Login failed. Please check your credentials and try again.",
+            );
+            return;
+        }
     };
 
     return (
