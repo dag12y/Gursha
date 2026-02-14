@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { login } from "@/api/auth";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { setToken } from "@/utils/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
 import {
     Card,
     CardContent,
@@ -18,12 +17,12 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await login(email, password);
-            setToken(response.token);
+            await login(email, password);
             navigate("/restaurants");
         } catch (error) {
             console.error("Login failed:", error);
