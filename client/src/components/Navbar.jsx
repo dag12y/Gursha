@@ -17,6 +17,11 @@ export default function Navbar() {
     }, [isAuthenticated, user, refreshUser]);
 
     function handleNavClick(item) {
+        if (item === "Admin") {
+            navigate("/admin");
+            return;
+        }
+
         if (item === "Staff") {
             navigate("/staff");
             return;
@@ -54,9 +59,8 @@ export default function Navbar() {
                     {isAuthenticated ? (
                         <>
                             {[
-                                ...(user?.role === "staff" || user?.role === "admin"
-                                    ? ["Staff"]
-                                    : []),
+                                ...(user?.role === "admin" ? ["Admin"] : []),
+                                ...(user?.role === "staff" ? ["Staff"] : []),
                                 "Restaurant",
                                 "Reservation",
                                 "Profile",

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
-export default function StaffRoute({ children }) {
+export default function AdminRoute({ children }) {
     const { isAuthenticated, user, refreshUser } = useAuth();
     const location = useLocation();
     const [checkingUser, setCheckingUser] = useState(
@@ -23,7 +23,7 @@ export default function StaffRoute({ children }) {
             try {
                 await refreshUser();
             } catch {
-                // ProtectedRoute/AuthContext handles invalid token flow.
+                // Auth context handles token cleanup on failure paths.
             } finally {
                 if (isMounted) {
                     setCheckingUser(false);
@@ -45,15 +45,12 @@ export default function StaffRoute({ children }) {
     if (checkingUser) {
         return (
             <div className="container mx-auto px-4 py-8 text-sm text-muted-foreground">
-                Loading staff access...
+                Loading admin access...
             </div>
         );
     }
 
-    const role = user?.role;
-    const canAccessStaff = role === "staff";
-
-    if (!canAccessStaff) {
+    if (user?.role !== "admin") {
         return <Navigate to="/restaurants" replace />;
     }
 

@@ -7,10 +7,14 @@ import MyReservationsPage from "../pages/diner/MyReservations";
 import ProfilePage from "../pages/diner/Profile";
 import ProtectedRoute from "../components/ProtectedRoute";
 import StaffRoute from "../components/StaffRoute";
+import AdminRoute from "../components/AdminRoute";
 import StaffHomePage from "../pages/staff/StaffHome";
 import StaffReservationsPage from "../pages/staff/StaffReservations";
 import StaffAnalyticsPage from "../pages/staff/StaffAnalytics";
 import StaffTablesPage from "../pages/staff/StaffTables";
+import AdminHomePage from "../pages/admin/AdminHome";
+import AdminRestaurantsPage from "../pages/admin/AdminRestaurants";
+import AdminAssignStaffPage from "../pages/admin/AdminAssignStaff";
 
 function AppRouter() {
     return (
@@ -80,6 +84,30 @@ function AppRouter() {
                     <StaffRoute>
                         <StaffTablesPage />
                     </StaffRoute>
+                }
+            />
+            <Route
+                path="/admin"
+                element={
+                    <AdminRoute>
+                        <AdminHomePage />
+                    </AdminRoute>
+                }
+            />
+            <Route
+                path="/admin/restaurants"
+                element={
+                    <AdminRoute>
+                        <AdminRestaurantsPage />
+                    </AdminRoute>
+                }
+            />
+            <Route
+                path="/admin/assign-staff"
+                element={
+                    <AdminRoute>
+                        <AdminAssignStaffPage />
+                    </AdminRoute>
                 }
             />
         </Routes>
