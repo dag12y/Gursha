@@ -13,8 +13,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const TABLE_STATUS_OPTIONS = ["Available", "Reserved", "Occupied", "Finishing Up"];
+const TABLE_FILTER_OPTIONS = ["All", ...TABLE_STATUS_OPTIONS];
+
+function tableStatusBadgeClass(status) {
+    if (status === "Available") {
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    }
+    if (status === "Reserved") {
+        return "bg-amber-100 text-amber-800 border-amber-200";
+    }
+    if (status === "Occupied") {
+        return "bg-blue-100 text-blue-800 border-blue-200";
+    }
+    if (status === "Finishing Up") {
+        return "bg-violet-100 text-violet-800 border-violet-200";
+    }
+    return "bg-secondary text-secondary-foreground";
+}
 
 export default function StaffTablesPage() {
     const navigate = useNavigate();
@@ -26,6 +44,7 @@ export default function StaffTablesPage() {
     const [submitting, setSubmitting] = useState(false);
     const [savingId, setSavingId] = useState("");
     const [deletingId, setDeletingId] = useState("");
+    const [statusFilter, setStatusFilter] = useState("All");
 
     const [newName, setNewName] = useState("");
     const [newCapacity, setNewCapacity] = useState("");
@@ -76,9 +95,17 @@ export default function StaffTablesPage() {
         fetchTables();
     }, [restaurantId]);
 
-    const sortedTables = useMemo(
-        () => [...tables].sort((a, b) => a.name.localeCompare(b.name)),
-        [tables],
+    const filteredTables = useMemo(
+        () =>
+            tables.filter((table) =>
+                statusFilter === "All" ? true : table.status === statusFilter,
+            ),
+        [tables, statusFilter],
+    );
+
+    const sortedFilteredTables = useMemo(
+        () => [...filteredTables].sort((a, b) => a.name.localeCompare(b.name)),
+        [filteredTables],
     );
 
     async function handleCreateTable(event) {
@@ -234,7 +261,18 @@ export default function StaffTablesPage() {
             <div className="max-w-5xl mx-auto space-y-6">
                 <div className="flex items-center justify-between gap-3">
                     <h1 className="text-3xl font-bold">Table Management</h1>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                        <select
+                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            value={statusFilter}
+                            onChange={(event) => setStatusFilter(event.target.value)}
+                        >
+                            {TABLE_FILTER_OPTIONS.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </select>
                         <Button variant="outline" onClick={() => navigate("/staff/reservations")}>
                             Reservations
                         </Button>
@@ -298,14 +336,16 @@ export default function StaffTablesPage() {
                         </Card>
 
                         <div className="space-y-3">
-                            {sortedTables.length === 0 ? (
+                            {sortedFilteredTables.length === 0 ? (
                                 <Card>
                                     <CardContent className="py-8 text-center">
-                                        <p className="text-muted-foreground">No tables found.</p>
+                                        <p className="text-muted-foreground">
+                                            No tables found for the selected filter.
+                                        </p>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                sortedTables.map((table) => (
+                                sortedFilteredTables.map((table) => (
                                     <Card key={table._id}>
                                         <CardContent className="pt-6 space-y-4">
                                             {!table.editing ? (
@@ -319,7 +359,13 @@ export default function StaffTablesPage() {
                                                             <Users className="h-4 w-4" />
                                                             <span>Capacity: {table.capacity}</span>
                                                             <span>•</span>
-                                                            <span>Status: {table.status}</span>
+                                                            <span>Status:</span>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={tableStatusBadgeClass(table.status)}
+                                                            >
+                                                                {table.status}
+                                                            </Badge>
                                                         </div>
                                                     </div>
 

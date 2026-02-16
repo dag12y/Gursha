@@ -8,8 +8,26 @@ import {
 } from "@/api/reservation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const STATUS_OPTIONS = ["Pending", "Confirmed", "Seated", "Cancelled"];
+const FILTER_OPTIONS = ["All", ...STATUS_OPTIONS];
+
+function statusBadgeClass(status) {
+    if (status === "Pending") {
+        return "bg-amber-100 text-amber-800 border-amber-200";
+    }
+    if (status === "Confirmed") {
+        return "bg-blue-100 text-blue-800 border-blue-200";
+    }
+    if (status === "Seated") {
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    }
+    if (status === "Cancelled") {
+        return "bg-rose-100 text-rose-800 border-rose-200";
+    }
+    return "bg-secondary text-secondary-foreground";
+}
 
 function formatDateTime(value) {
     const date = new Date(value);
@@ -31,6 +49,7 @@ export default function StaffReservationsPage() {
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState("");
+    const [statusFilter, setStatusFilter] = useState("All");
 
     useEffect(() => {
         async function fetchReservations() {
@@ -82,14 +101,24 @@ export default function StaffReservationsPage() {
         }
     }
 
+    const filteredReservations = useMemo(
+        () =>
+            reservations.filter((reservation) =>
+                statusFilter === "All"
+                    ? true
+                    : reservation.status === statusFilter,
+            ),
+        [reservations, statusFilter],
+    );
+
     const sortedReservations = useMemo(
         () =>
-            [...reservations].sort(
+            [...filteredReservations].sort(
                 (a, b) =>
                     new Date(b?.startTime).getTime() -
                     new Date(a?.startTime).getTime(),
             ),
-        [reservations],
+        [filteredReservations],
     );
 
     if (loading) {
@@ -129,7 +158,18 @@ export default function StaffReservationsPage() {
             <div className="max-w-5xl mx-auto space-y-4">
                 <div className="flex items-center justify-between gap-3">
                     <h1 className="text-3xl font-bold">Restaurant Reservations</h1>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                        <select
+                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            value={statusFilter}
+                            onChange={(event) => setStatusFilter(event.target.value)}
+                        >
+                            {FILTER_OPTIONS.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </select>
                         <Button variant="outline" onClick={() => navigate("/staff/tables")}>
                             Manage Tables
                         </Button>
@@ -146,9 +186,12 @@ export default function StaffReservationsPage() {
                                 <CardTitle className="text-lg">
                                     {reservation.user?.name || "Guest"}
                                 </CardTitle>
-                                <span className="text-sm px-3 py-1 rounded-full bg-secondary">
+                                <Badge
+                                    variant="outline"
+                                    className={statusBadgeClass(reservation.status)}
+                                >
                                     {reservation.status}
-                                </span>
+                                </Badge>
                             </div>
                         </CardHeader>
 
@@ -195,7 +238,7 @@ export default function StaffReservationsPage() {
                                 <select
                                     id={`status-${reservation._id}`}
                                     className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                                    defaultValue={reservation.status}
+                                    value={reservation.status}
                                     disabled={savingId === reservation._id}
                                     onChange={(event) =>
                                         handleStatusChange(
