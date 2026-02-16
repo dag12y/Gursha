@@ -1,14 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function Navbar() {
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
-    const navItems = ["Restaurant", "Reservation", "Profile"];
 
-    function handlePlaceholderClick(label) {
-        toast.info(`${label} page will be connected soon.`);
+    function handleNavClick(item) {
+        if (item === "Restaurant") {
+            navigate("/restaurants");
+            return;
+        }
+
+        if (item === "Reservation") {
+            navigate("/my-reservations");
+            return;
+        }
+
+        toast.info("Profile page will be connected soon.");
     }
 
     return (
@@ -24,11 +34,11 @@ export default function Navbar() {
                 <div className="flex items-center gap-4">
                     {isAuthenticated ? (
                         <>
-                            {navItems.map((item) => (
+                            {["Restaurant", "Reservation", "Profile"].map((item) => (
                                 <Button
                                     key={item}
                                     variant="ghost"
-                                    onClick={() => handlePlaceholderClick(item)}
+                                    onClick={() => handleNavClick(item)}
                                 >
                                     {item}
                                 </Button>

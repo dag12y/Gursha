@@ -3,6 +3,7 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 import Restaurant from "../pages/diner/Restaurants";
 import ReserveRestaurantPage from "../pages/diner/ReserveRestaurant";
+import MyReservationsPage from "../pages/diner/MyReservations";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 function AppRouter() {
@@ -24,6 +25,14 @@ function AppRouter() {
                 element={
                     <ProtectedRoute>
                         <ReserveRestaurantPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/my-reservations"
+                element={
+                    <ProtectedRoute>
+                        <MyReservationsPage />
                     </ProtectedRoute>
                 }
             />
