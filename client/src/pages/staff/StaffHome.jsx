@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export default function StaffHomePage() {
+    const navigate = useNavigate();
     const { user } = useAuth();
 
     return (
@@ -21,6 +24,11 @@ export default function StaffHomePage() {
                             Role: <span className="font-medium text-foreground capitalize">{user?.role || "staff"}</span>
                         </p>
                         <p>Next step: build reservation management and analytics here.</p>
+                        <div className="pt-2">
+                            <Button onClick={() => navigate("/staff/reservations")}>
+                                Manage Reservations
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

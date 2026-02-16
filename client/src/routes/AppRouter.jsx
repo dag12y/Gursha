@@ -8,6 +8,7 @@ import ProfilePage from "../pages/diner/Profile";
 import ProtectedRoute from "../components/ProtectedRoute";
 import StaffRoute from "../components/StaffRoute";
 import StaffHomePage from "../pages/staff/StaffHome";
+import StaffReservationsPage from "../pages/staff/StaffReservations";
 
 function AppRouter() {
     return (
@@ -52,6 +53,14 @@ function AppRouter() {
                 element={
                     <StaffRoute>
                         <StaffHomePage />
+                    </StaffRoute>
+                }
+            />
+            <Route
+                path="/staff/reservations"
+                element={
+                    <StaffRoute>
+                        <StaffReservationsPage />
                     </StaffRoute>
                 }
             />
