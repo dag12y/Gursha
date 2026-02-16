@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Utensils, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { getAllRestaurants } from "@/api/restaurant";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 export default function RestaurantsPage() {
+    const navigate = useNavigate();
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -120,9 +122,7 @@ export default function RestaurantsPage() {
                                 <Button
                                     className="w-full mt-4"
                                     onClick={() =>
-                                        toast.info(
-                                            `Reservation flow for ${restaurant.name} will be added next.`,
-                                        )
+                                        navigate(`/restaurants/${restaurant._id}/reserve`)
                                     }
                                 >
                                     Reserve
