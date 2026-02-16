@@ -6,6 +6,8 @@ import ReserveRestaurantPage from "../pages/diner/ReserveRestaurant";
 import MyReservationsPage from "../pages/diner/MyReservations";
 import ProfilePage from "../pages/diner/Profile";
 import ProtectedRoute from "../components/ProtectedRoute";
+import StaffRoute from "../components/StaffRoute";
+import StaffHomePage from "../pages/staff/StaffHome";
 
 function AppRouter() {
     return (
@@ -43,6 +45,14 @@ function AppRouter() {
                     <ProtectedRoute>
                         <ProfilePage />
                     </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/staff"
+                element={
+                    <StaffRoute>
+                        <StaffHomePage />
+                    </StaffRoute>
                 }
             />
         </Routes>

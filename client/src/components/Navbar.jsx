@@ -17,6 +17,11 @@ export default function Navbar() {
     }, [isAuthenticated, user, refreshUser]);
 
     function handleNavClick(item) {
+        if (item === "Staff") {
+            navigate("/staff");
+            return;
+        }
+
         if (item === "Restaurant") {
             navigate("/restaurants");
             return;
@@ -48,7 +53,14 @@ export default function Navbar() {
                 <div className="flex items-center gap-4">
                     {isAuthenticated ? (
                         <>
-                            {["Restaurant", "Reservation", "Profile"].map((item) => (
+                            {[
+                                ...(user?.role === "staff" || user?.role === "admin"
+                                    ? ["Staff"]
+                                    : []),
+                                "Restaurant",
+                                "Reservation",
+                                "Profile",
+                            ].map((item) => (
                                 <Button
                                     key={item}
                                     variant="ghost"
