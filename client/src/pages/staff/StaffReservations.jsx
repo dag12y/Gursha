@@ -129,9 +129,14 @@ export default function StaffReservationsPage() {
             <div className="max-w-5xl mx-auto space-y-4">
                 <div className="flex items-center justify-between gap-3">
                     <h1 className="text-3xl font-bold">Restaurant Reservations</h1>
-                    <Button variant="outline" onClick={() => navigate("/staff/analytics")}>
-                        View Analytics
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => navigate("/staff/tables")}>
+                            Manage Tables
+                        </Button>
+                        <Button variant="outline" onClick={() => navigate("/staff/analytics")}>
+                            View Analytics
+                        </Button>
+                    </div>
                 </div>
 
                 {sortedReservations.map((reservation) => (

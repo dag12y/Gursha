@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { BarChart3, CalendarDays, ClipboardList, Table2 } from "lucide-react";
 import { getReservationDashboardAnalytics } from "@/api/reservation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 function formatDay(value) {
     if (!value) {
@@ -21,6 +23,7 @@ function formatDay(value) {
 }
 
 export default function StaffAnalyticsPage() {
+    const navigate = useNavigate();
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -90,7 +93,23 @@ export default function StaffAnalyticsPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-5xl mx-auto space-y-6">
-                <h1 className="text-3xl font-bold">Staff Analytics</h1>
+                <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-3xl font-bold">Staff Analytics</h1>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate("/staff/tables")}
+                        >
+                            Manage Tables
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate("/staff/reservations")}
+                        >
+                            Manage Reservations
+                        </Button>
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>

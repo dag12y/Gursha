@@ -10,6 +10,7 @@ import StaffRoute from "../components/StaffRoute";
 import StaffHomePage from "../pages/staff/StaffHome";
 import StaffReservationsPage from "../pages/staff/StaffReservations";
 import StaffAnalyticsPage from "../pages/staff/StaffAnalytics";
+import StaffTablesPage from "../pages/staff/StaffTables";
 
 function AppRouter() {
     return (
@@ -70,6 +71,14 @@ function AppRouter() {
                 element={
                     <StaffRoute>
                         <StaffAnalyticsPage />
+                    </StaffRoute>
+                }
+            />
+            <Route
+                path="/staff/tables"
+                element={
+                    <StaffRoute>
+                        <StaffTablesPage />
                     </StaffRoute>
                 }
             />
