@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,15 @@ import { toast } from "sonner";
 
 export default function Navbar() {
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, refreshUser } = useAuth();
+
+    useEffect(() => {
+        if (!isAuthenticated || user) {
+            return;
+        }
+
+        refreshUser().catch(() => {});
+    }, [isAuthenticated, user, refreshUser]);
 
     function handleNavClick(item) {
         if (item === "Restaurant") {
@@ -18,7 +27,12 @@ export default function Navbar() {
             return;
         }
 
-        toast.info("Profile page will be connected soon.");
+        if (item === "Profile") {
+            navigate("/profile");
+            return;
+        }
+
+        toast.info("Page will be connected soon.");
     }
 
     return (
