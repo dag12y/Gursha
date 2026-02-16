@@ -26,3 +26,8 @@ export async function updateReservationStatus(id, status) {
     });
     return response.data?.reservation ?? null;
 }
+
+export async function getReservationDashboardAnalytics() {
+    const response = await axiosInstance.get("/reservations/restaurant/dashboard");
+    return response.data;
+}

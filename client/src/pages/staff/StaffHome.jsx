@@ -25,9 +25,17 @@ export default function StaffHomePage() {
                         </p>
                         <p>Next step: build reservation management and analytics here.</p>
                         <div className="pt-2">
-                            <Button onClick={() => navigate("/staff/reservations")}>
-                                Manage Reservations
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                                <Button onClick={() => navigate("/staff/reservations")}>
+                                    Manage Reservations
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => navigate("/staff/analytics")}
+                                >
+                                    View Analytics
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

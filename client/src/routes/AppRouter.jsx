@@ -9,6 +9,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import StaffRoute from "../components/StaffRoute";
 import StaffHomePage from "../pages/staff/StaffHome";
 import StaffReservationsPage from "../pages/staff/StaffReservations";
+import StaffAnalyticsPage from "../pages/staff/StaffAnalytics";
 
 function AppRouter() {
     return (
@@ -61,6 +62,14 @@ function AppRouter() {
                 element={
                     <StaffRoute>
                         <StaffReservationsPage />
+                    </StaffRoute>
+                }
+            />
+            <Route
+                path="/staff/analytics"
+                element={
+                    <StaffRoute>
+                        <StaffAnalyticsPage />
                     </StaffRoute>
                 }
             />

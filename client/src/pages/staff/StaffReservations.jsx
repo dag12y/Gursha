@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CalendarDays, Clock3, Users, Table2, UserRound } from "lucide-react";
 import {
@@ -26,6 +27,7 @@ function formatDateTime(value) {
 }
 
 export default function StaffReservationsPage() {
+    const navigate = useNavigate();
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState("");
@@ -125,7 +127,12 @@ export default function StaffReservationsPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="max-w-5xl mx-auto space-y-4">
-                <h1 className="text-3xl font-bold">Restaurant Reservations</h1>
+                <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-3xl font-bold">Restaurant Reservations</h1>
+                    <Button variant="outline" onClick={() => navigate("/staff/analytics")}>
+                        View Analytics
+                    </Button>
+                </div>
 
                 {sortedReservations.map((reservation) => (
                     <Card key={reservation._id}>
