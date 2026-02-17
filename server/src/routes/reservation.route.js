@@ -3,6 +3,7 @@ import authMiddleware from "../middleware/auth.middleware.js";
 import { isStaff } from "../middleware/role.middleware.js";
 import {
     createReservation,
+    getAvailableTimeSlots,
     getMyReservations,
     cancelReservation,
     getRestaurantReservations,
@@ -23,6 +24,19 @@ reservationRouter.post("/", authMiddleware, [
     check('time', 'Reservation time is required').not().isEmpty(),
     check('partySize', 'Party size is required and must be a number').isInt({ min: 1 }),
 ],createReservation);
+
+//@route Get api/reservations/availability
+//@desc Get available time slots for reservation
+reservationRouter.get(
+    "/availability",
+    authMiddleware,
+    [
+        check("restaurant", "Restaurant ID is required").not().isEmpty(),
+        check("date", "Reservation date is required").not().isEmpty(),
+        check("partySize", "Party size must be a number").isInt({ min: 1 }),
+    ],
+    getAvailableTimeSlots,
+);
 
 //@route Get api/reservations/my
 //@desc Get my reservations

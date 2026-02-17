@@ -5,6 +5,17 @@ export async function createReservation(payload) {
     return response.data;
 }
 
+export async function getAvailableTimeSlots(restaurant, date, partySize) {
+    const response = await axiosInstance.get("/reservations/availability", {
+        params: {
+            restaurant,
+            date,
+            partySize,
+        },
+    });
+    return response.data?.slots ?? [];
+}
+
 export async function getMyReservations() {
     const response = await axiosInstance.get("/reservations/my");
     return response.data?.reservations ?? [];

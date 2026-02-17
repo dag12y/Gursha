@@ -12,6 +12,92 @@ function buildStatusHistoryEntry(status, changedBy, note) {
     };
 }
 
+function generateTimeSlots(intervalMinutes = 30) {
+    const slots = [];
+    for (let hour = 11; hour <= 21; hour += 1) {
+        for (let minute = 0; minute < 60; minute += intervalMinutes) {
+            const hh = String(hour).padStart(2, "0");
+            const mm = String(minute).padStart(2, "0");
+            slots.push(`${hh}:${mm}`);
+        }
+    }
+    return slots;
+}
+
+export async function getAvailableTimeSlots(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { restaurant, date, partySize } = req.query;
+    const normalizedPartySize = Number(partySize);
+
+    try {
+        const restaurantExists = await Restaurant.findById(restaurant);
+        if (!restaurantExists) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const candidateTables = await Table.find({
+            restaurant,
+            capacity: { $gte: normalizedPartySize },
+        }).select("_id");
+
+        if (candidateTables.length === 0) {
+            return res.status(200).json({ slots: [] });
+        }
+
+        const startOfDay = new Date(`${date}T00:00:00`);
+        const endOfDay = new Date(`${date}T23:59:59`);
+
+        const activeReservations = await Reservation.find({
+            restaurant,
+            status: { $in: ["Pending", "Confirmed", "Seated"] },
+            startTime: { $lt: endOfDay },
+            endTime: { $gt: startOfDay },
+        }).select("table startTime endTime");
+
+        const candidateTableIds = candidateTables.map((table) => table._id.toString());
+
+        const slots = generateTimeSlots(30)
+            .map((time) => {
+                const slotStart = new Date(`${date}T${time}:00`);
+                const slotEnd = new Date(slotStart.getTime() + 2 * 60 * 60 * 1000);
+
+                const reservedForSlot = activeReservations
+                    .filter(
+                        (reservation) =>
+                            reservation.startTime < slotEnd &&
+                            reservation.endTime > slotStart,
+                    )
+                    .map((reservation) => reservation.table.toString());
+
+                const availableCount = candidateTableIds.filter(
+                    (tableId) => !reservedForSlot.includes(tableId),
+                ).length;
+
+                return {
+                    time,
+                    available: availableCount > 0,
+                    availableTables: availableCount,
+                };
+            })
+            .filter((slot) => slot.available);
+
+        return res.status(200).json({ slots });
+    } catch (error) {
+        console.error("Error fetching availability:", error);
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
+    }
+}
+
 export async function createReservation(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

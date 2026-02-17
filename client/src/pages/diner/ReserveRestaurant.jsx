@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { getRestaurantById } from "@/api/restaurant";
-import { createReservation } from "@/api/reservation";
+import { createReservation, getAvailableTimeSlots } from "@/api/reservation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,13 @@ export default function ReserveRestaurantPage() {
     const [restaurant, setRestaurant] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [loadingSlots, setLoadingSlots] = useState(false);
+    const [availableSlots, setAvailableSlots] = useState([]);
 
     const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
     const [date, setDate] = useState(today);
-    const [time, setTime] = useState("19:00");
+    const [time, setTime] = useState("");
     const [partySize, setPartySize] = useState(2);
 
     useEffect(() => {
@@ -43,8 +45,49 @@ export default function ReserveRestaurantPage() {
         }
     }, [id]);
 
+    useEffect(() => {
+        async function fetchAvailableSlots() {
+            if (!id || !date || Number(partySize) < 1) {
+                setAvailableSlots([]);
+                setTime("");
+                return;
+            }
+
+            setLoadingSlots(true);
+            try {
+                const slots = await getAvailableTimeSlots(id, date, Number(partySize));
+                setAvailableSlots(slots);
+
+                if (!slots.length) {
+                    setTime("");
+                    return;
+                }
+
+                const hasCurrentSelection = slots.some((slot) => slot.time === time);
+                if (!hasCurrentSelection) {
+                    setTime(slots[0].time);
+                }
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message || "Failed to load available time slots";
+                toast.error(message);
+                setAvailableSlots([]);
+                setTime("");
+            } finally {
+                setLoadingSlots(false);
+            }
+        }
+
+        fetchAvailableSlots();
+    }, [id, date, partySize, time]);
+
     async function handleSubmit(event) {
         event.preventDefault();
+
+        if (!time) {
+            toast.error("Please select an available time slot");
+            return;
+        }
 
         setSubmitting(true);
         try {
@@ -119,13 +162,32 @@ export default function ReserveRestaurantPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="time">Time</Label>
-                            <Input
+                            <select
                                 id="time"
-                                type="time"
+                                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                 value={time}
                                 onChange={(event) => setTime(event.target.value)}
                                 required
-                            />
+                                disabled={loadingSlots || !availableSlots.length}
+                            >
+                                {!availableSlots.length ? (
+                                    <option value="">
+                                        {loadingSlots
+                                            ? "Loading slots..."
+                                            : "No available slots"}
+                                    </option>
+                                ) : (
+                                    availableSlots.map((slot) => (
+                                        <option key={slot.time} value={slot.time}>
+                                            {slot.time} ({slot.availableTables} table
+                                            {slot.availableTables === 1 ? "" : "s"} available)
+                                        </option>
+                                    ))
+                                )}
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                Showing available slots for selected date and party size.
+                            </p>
                         </div>
 
                         <div className="space-y-2">
