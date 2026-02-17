@@ -6,7 +6,7 @@ import { getAllRestaurants } from "@/api/restaurant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ImageWithFallback } from "@/components/ImageWithFallback";
+import RestaurantImageSlider from "@/components/RestaurantImageSlider";
 
 export default function RestaurantsPage() {
     const navigate = useNavigate();
@@ -74,18 +74,14 @@ export default function RestaurantsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {restaurants.map((restaurant) => {
-                    const imageSrc =
-                        restaurant?.photos?.[0];
-
                     return (
                         <Card
                             key={restaurant._id}
                             className="overflow-hidden flex flex-col"
                         >
-                            <ImageWithFallback
-                                src={imageSrc}
+                            <RestaurantImageSlider
+                                photos={restaurant?.photos}
                                 alt={restaurant.name || "Restaurant"}
-                                className="h-48 w-full object-cover"
                             />
 
                             <CardHeader className="pb-3">

@@ -12,6 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
+function parsePhotoUrls(value) {
+    return value
+        .split("\n")
+        .flatMap((line) => line.split(","))
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
 export default function AdminRestaurantsPage() {
     const navigate = useNavigate();
     const [restaurants, setRestaurants] = useState([]);
@@ -26,6 +34,7 @@ export default function AdminRestaurantsPage() {
         cuisine: "",
         priceRange: "",
         hours: "",
+        photos: "",
     });
 
     useEffect(() => {
@@ -40,6 +49,7 @@ export default function AdminRestaurantsPage() {
                     draftCuisine: restaurant.cuisine || "",
                     draftPriceRange: restaurant.priceRange || "",
                     draftHours: restaurant.hours || "",
+                    draftPhotos: (restaurant.photos || []).join("\n"),
                 }));
                 setRestaurants(normalized);
             } catch (error) {
@@ -70,6 +80,7 @@ export default function AdminRestaurantsPage() {
                 cuisine: form.cuisine.trim(),
                 priceRange: form.priceRange.trim() || undefined,
                 hours: form.hours.trim() || undefined,
+                photos: parsePhotoUrls(form.photos),
             });
 
             if (created) {
@@ -83,6 +94,7 @@ export default function AdminRestaurantsPage() {
                         draftCuisine: created.cuisine || "",
                         draftPriceRange: created.priceRange || "",
                         draftHours: created.hours || "",
+                        draftPhotos: (created.photos || []).join("\n"),
                     },
                 ]);
             }
@@ -93,6 +105,7 @@ export default function AdminRestaurantsPage() {
                 cuisine: "",
                 priceRange: "",
                 hours: "",
+                photos: "",
             });
             toast.success("Restaurant created successfully");
         } catch (error) {
@@ -118,6 +131,7 @@ export default function AdminRestaurantsPage() {
                           draftCuisine: restaurant.cuisine || "",
                           draftPriceRange: restaurant.priceRange || "",
                           draftHours: restaurant.hours || "",
+                          draftPhotos: (restaurant.photos || []).join("\n"),
                       }
                     : restaurant,
             ),
@@ -147,6 +161,7 @@ export default function AdminRestaurantsPage() {
                 cuisine: restaurant.draftCuisine.trim(),
                 priceRange: restaurant.draftPriceRange.trim() || undefined,
                 hours: restaurant.draftHours.trim() || undefined,
+                photos: parsePhotoUrls(restaurant.draftPhotos || ""),
             });
 
             setRestaurants((prev) =>
@@ -163,6 +178,7 @@ export default function AdminRestaurantsPage() {
                               draftPriceRange:
                                   updated?.priceRange || restaurant.draftPriceRange,
                               draftHours: updated?.hours || restaurant.draftHours,
+                              draftPhotos: (updated?.photos || []).join("\n"),
                           }
                         : item,
                 ),
@@ -288,6 +304,18 @@ export default function AdminRestaurantsPage() {
                                     }
                                 />
                             </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="photos">Photo URLs</Label>
+                                <textarea
+                                    id="photos"
+                                    className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    placeholder="One URL per line (or comma separated)"
+                                    value={form.photos}
+                                    onChange={(event) =>
+                                        setForm((prev) => ({ ...prev, photos: event.target.value }))
+                                    }
+                                />
+                            </div>
                             <div className="md:col-span-2">
                                 <Button type="submit" disabled={submitting}>
                                     {submitting ? "Creating..." : "Create Restaurant"}
@@ -318,6 +346,9 @@ export default function AdminRestaurantsPage() {
                                                 <p className="text-sm text-muted-foreground">
                                                     {restaurant.priceRange || "N/A"}
                                                     {restaurant.hours ? ` • ${restaurant.hours}` : ""}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Photos: {restaurant.photos?.length || 0}
                                                 </p>
                                             </div>
                                             <div className="flex gap-2">
@@ -398,6 +429,21 @@ export default function AdminRestaurantsPage() {
                                                         updateDraft(
                                                             restaurant._id,
                                                             "draftHours",
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label>Photo URLs</Label>
+                                                <textarea
+                                                    className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                                    placeholder="One URL per line (or comma separated)"
+                                                    value={restaurant.draftPhotos || ""}
+                                                    onChange={(event) =>
+                                                        updateDraft(
+                                                            restaurant._id,
+                                                            "draftPhotos",
                                                             event.target.value,
                                                         )
                                                     }

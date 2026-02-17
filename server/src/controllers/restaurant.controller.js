@@ -85,10 +85,10 @@ export async function updateRestaurant(req, res) {
     if (cuisine) updateData.cuisine = cuisine;
     if (priceRange) updateData.priceRange = priceRange;
     if (hours) updateData.hours = hours;
-    if (menu) updateData.menu = menu;
-    if (photos) updateData.photos = photos;
-    if (tables) updateData.tables = tables;
-    if (staff) updateData.staff = staff;
+    if (menu !== undefined) updateData.menu = menu;
+    if (photos !== undefined) updateData.photos = photos;
+    if (tables !== undefined) updateData.tables = tables;
+    if (staff !== undefined) updateData.staff = staff;
 
     try {
         //find restaurant by id and update the data
