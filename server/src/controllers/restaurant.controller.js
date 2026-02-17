@@ -61,7 +61,7 @@ export async function addMenuItem(req, res) {
     }
 
     try {
-        const { name, price, description } = req.body;
+        const { name, price, description, image } = req.body;
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) {
             return res.status(404).json({ message: "Restaurant not found" });
@@ -71,6 +71,7 @@ export async function addMenuItem(req, res) {
             name,
             price: Number(price),
             description,
+            image,
         });
         await restaurant.save();
 
@@ -99,7 +100,7 @@ export async function updateMenuItem(req, res) {
     }
 
     try {
-        const { name, price, description } = req.body;
+        const { name, price, description, image } = req.body;
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) {
             return res.status(404).json({ message: "Restaurant not found" });
@@ -113,6 +114,7 @@ export async function updateMenuItem(req, res) {
         if (name !== undefined) item.name = name;
         if (price !== undefined) item.price = Number(price);
         if (description !== undefined) item.description = description;
+        if (image !== undefined) item.image = image;
 
         await restaurant.save();
 

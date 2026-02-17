@@ -25,6 +25,7 @@ const restaurantSchema = new mongoose.Schema(
                 name: String,
                 price: Number,
                 description: String,
+                image: String,
             },
         ],
         photos: [String],

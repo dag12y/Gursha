@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 export default function ReserveRestaurantPage() {
     const { id } = useParams();
@@ -158,13 +159,22 @@ export default function ReserveRestaurantPage() {
                                             key={`${restaurant._id}-menu-item-${index}`}
                                             className="flex items-start justify-between gap-3 text-sm"
                                         >
-                                            <div>
-                                                <p className="font-medium">{item.name}</p>
-                                                {item.description ? (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {item.description}
-                                                    </p>
+                                            <div className="flex items-start gap-3">
+                                                {item.image ? (
+                                                    <ImageWithFallback
+                                                        src={item.image}
+                                                        alt={item.name}
+                                                        className="h-16 w-16 rounded-md object-cover"
+                                                    />
                                                 ) : null}
+                                                <div>
+                                                    <p className="font-medium">{item.name}</p>
+                                                    {item.description ? (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {item.description}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
                                             </div>
                                             <p className="text-sm font-medium">
                                                 ${Number(item.price || 0).toFixed(2)}

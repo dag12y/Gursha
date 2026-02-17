@@ -57,6 +57,9 @@ restaurantRouter.post(
         check("price", "Price is required and must be a number").isFloat({
             min: 0,
         }),
+        check("image", "Image must be a valid URL")
+            .optional({ checkFalsy: true })
+            .isURL(),
     ],
     addMenuItem,
 );
@@ -72,6 +75,9 @@ restaurantRouter.put(
         check("price", "Price must be a number")
             .optional()
             .isFloat({ min: 0 }),
+        check("image", "Image must be a valid URL")
+            .optional({ checkFalsy: true })
+            .isURL(),
     ],
     updateMenuItem,
 );

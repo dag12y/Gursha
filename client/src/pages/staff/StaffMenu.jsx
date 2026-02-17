@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { ImageWithFallback } from "@/components/ImageWithFallback";
 
 export default function StaffMenuPage() {
     const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function StaffMenuPage() {
     const [name, setName] = useState("");
     const [price, setPrice] = useState("");
     const [description, setDescription] = useState("");
+    const [image, setImage] = useState("");
 
     useEffect(() => {
         async function fetchMenu() {
@@ -36,6 +38,7 @@ export default function StaffMenuPage() {
                     draftName: item.name || "",
                     draftPrice: String(item.price ?? ""),
                     draftDescription: item.description || "",
+                    draftImage: item.image || "",
                 }));
                 setMenu(normalized);
             } catch (error) {
@@ -64,6 +67,7 @@ export default function StaffMenuPage() {
                 name: name.trim(),
                 price: Number(price),
                 description: description.trim() || undefined,
+                image: image.trim() || undefined,
             });
 
             if (created) {
@@ -75,6 +79,7 @@ export default function StaffMenuPage() {
                         draftName: created.name || "",
                         draftPrice: String(created.price ?? ""),
                         draftDescription: created.description || "",
+                        draftImage: created.image || "",
                     },
                 ]);
             }
@@ -82,6 +87,7 @@ export default function StaffMenuPage() {
             setName("");
             setPrice("");
             setDescription("");
+            setImage("");
             toast.success("Menu item added");
         } catch (error) {
             const message =
@@ -104,6 +110,7 @@ export default function StaffMenuPage() {
                           draftName: item.name || "",
                           draftPrice: String(item.price ?? ""),
                           draftDescription: item.description || "",
+                          draftImage: item.image || "",
                       }
                     : item,
             ),
@@ -131,6 +138,7 @@ export default function StaffMenuPage() {
                 name: item.draftName.trim(),
                 price: Number(item.draftPrice),
                 description: item.draftDescription.trim() || undefined,
+                image: item.draftImage.trim() || undefined,
             });
 
             setMenu((prev) =>
@@ -144,6 +152,7 @@ export default function StaffMenuPage() {
                               draftPrice: String(updated?.price ?? item.draftPrice),
                               draftDescription:
                                   updated?.description || item.draftDescription,
+                              draftImage: updated?.image || item.draftImage,
                           }
                         : entry,
                 ),
@@ -257,6 +266,15 @@ export default function StaffMenuPage() {
                                     placeholder="Optional"
                                 />
                             </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="menu-image">Image URL</Label>
+                                <Input
+                                    id="menu-image"
+                                    value={image}
+                                    onChange={(event) => setImage(event.target.value)}
+                                    placeholder="https://..."
+                                />
+                            </div>
                             <div className="md:col-span-2">
                                 <Button type="submit" disabled={submitting}>
                                     {submitting ? "Adding..." : "Add Item"}
@@ -279,7 +297,7 @@ export default function StaffMenuPage() {
                                 <CardContent className="pt-6">
                                     {!item.editing ? (
                                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                            <div className="space-y-1">
+                                            <div className="space-y-1 flex-1">
                                                 <p className="font-semibold text-lg">{item.name}</p>
                                                 <p className="text-sm text-muted-foreground">
                                                     ${Number(item.price || 0).toFixed(2)}
@@ -290,6 +308,13 @@ export default function StaffMenuPage() {
                                                     </p>
                                                 ) : null}
                                             </div>
+                                            {item.image ? (
+                                                <ImageWithFallback
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    className="h-20 w-28 rounded-md object-cover"
+                                                />
+                                            ) : null}
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
@@ -350,6 +375,20 @@ export default function StaffMenuPage() {
                                                             event.target.value,
                                                         )
                                                     }
+                                                />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label>Image URL</Label>
+                                                <Input
+                                                    value={item.draftImage || ""}
+                                                    onChange={(event) =>
+                                                        updateDraft(
+                                                            item._id,
+                                                            "draftImage",
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="https://..."
                                                 />
                                             </div>
                                             <div className="md:col-span-2 flex gap-2">
