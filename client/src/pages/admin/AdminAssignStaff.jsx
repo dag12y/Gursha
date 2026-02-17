@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { assignStaffRole } from "@/api/auth";
+import { assignStaffRole, getAllUsers } from "@/api/auth";
 import { getAllRestaurants } from "@/api/restaurant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminAssignStaffPage() {
     const navigate = useNavigate();
+    const [users, setUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
     const [restaurants, setRestaurants] = useState([]);
     const [loadingRestaurants, setLoadingRestaurants] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -18,6 +19,19 @@ export default function AdminAssignStaffPage() {
     const [restaurantId, setRestaurantId] = useState("");
 
     useEffect(() => {
+        async function fetchUsers() {
+            try {
+                const data = await getAllUsers();
+                setUsers(Array.isArray(data) ? data : []);
+            } catch (error) {
+                const message =
+                    error?.response?.data?.message || "Failed to fetch users";
+                toast.error(message);
+            } finally {
+                setLoadingUsers(false);
+            }
+        }
+
         async function fetchRestaurants() {
             try {
                 const data = await getAllRestaurants();
@@ -31,6 +45,7 @@ export default function AdminAssignStaffPage() {
             }
         }
 
+        fetchUsers();
         fetchRestaurants();
     }, []);
 
@@ -39,7 +54,19 @@ export default function AdminAssignStaffPage() {
         setSubmitting(true);
 
         try {
-            await assignStaffRole(userId.trim(), restaurantId);
+            const updatedUser = await assignStaffRole(userId.trim(), restaurantId);
+            if (updatedUser?._id) {
+                setUsers((prev) =>
+                    prev.map((item) =>
+                        item._id === updatedUser._id
+                            ? {
+                                  ...item,
+                                  ...updatedUser,
+                              }
+                            : item,
+                    ),
+                );
+            }
             toast.success("User assigned as staff successfully");
             setUserId("");
         } catch (error) {
@@ -70,14 +97,22 @@ export default function AdminAssignStaffPage() {
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="userId">User ID</Label>
-                                <Input
+                                <Label htmlFor="userId">User</Label>
+                                <select
                                     id="userId"
-                                    placeholder="MongoDB user id"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                                     value={userId}
                                     onChange={(event) => setUserId(event.target.value)}
                                     required
-                                />
+                                    disabled={loadingUsers}
+                                >
+                                    <option value="">Select a user</option>
+                                    {users.map((user) => (
+                                        <option key={user._id} value={user._id}>
+                                            {user.name} ({user.email}) - {user.role}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="space-y-2">
@@ -99,7 +134,10 @@ export default function AdminAssignStaffPage() {
                                 </select>
                             </div>
 
-                            <Button type="submit" disabled={submitting || loadingRestaurants}>
+                            <Button
+                                type="submit"
+                                disabled={submitting || loadingRestaurants || loadingUsers}
+                            >
                                 {submitting ? "Assigning..." : "Assign Staff Role"}
                             </Button>
                         </form>

@@ -28,3 +28,8 @@ export async function assignStaffRole(userId, restaurantId) {
     });
     return response.data?.user ?? null;
 }
+
+export async function getAllUsers() {
+    const response = await axiosInstance.get("/auth/users");
+    return response.data?.users ?? [];
+}

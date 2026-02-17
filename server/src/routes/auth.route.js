@@ -6,6 +6,7 @@ import {
     registerUser,
     loginUser,
     getCurrentUser,
+    getAllUsers,
     assignStaffRole,
 } from "../controllers/auth.controller.js";
 
@@ -44,6 +45,11 @@ authRouter.post(
 //@desc get current user
 //@access Private
 authRouter.get("/me", authMiddleware, getCurrentUser);
+
+//@route GET /api/auth/users
+//@desc get all non-admin users
+//@access Private (admin)
+authRouter.get("/users", authMiddleware, isAdmin, getAllUsers);
 
 //@route Put /api/auth/assign-staff/:userId
 //@desc assign staff role to user

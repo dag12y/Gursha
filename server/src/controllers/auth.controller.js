@@ -106,6 +106,26 @@ export async function getCurrentUser(req, res) {
     }
 }
 
+export async function getAllUsers(req, res) {
+    try {
+        const users = await User.find({ role: { $ne: "admin" } })
+            .select("-password")
+            .sort({ name: 1 })
+            .populate("restaurant", "name");
+
+        return res.status(200).json({
+            message: "Users fetched successfully",
+            users,
+        });
+    } catch (error) {
+        console.error("Get users error:", error);
+        return res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
+    }
+}
+
 export async function assignStaffRole(req, res) {
     // Validate input
     const errors = validationResult(req);
