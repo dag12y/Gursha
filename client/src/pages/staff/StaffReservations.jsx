@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const STATUS_OPTIONS = ["Pending", "Confirmed", "Seated", "Cancelled"];
+const STATUS_OPTIONS = ["Pending", "Confirmed", "Declined", "Seated", "Cancelled"];
 const FILTER_OPTIONS = ["All", ...STATUS_OPTIONS];
 
 function statusBadgeClass(status) {
@@ -22,6 +22,9 @@ function statusBadgeClass(status) {
     }
     if (status === "Seated") {
         return "bg-emerald-100 text-emerald-800 border-emerald-200";
+    }
+    if (status === "Declined") {
+        return "bg-slate-100 text-slate-800 border-slate-200";
     }
     if (status === "Cancelled") {
         return "bg-rose-100 text-rose-800 border-rose-200";
