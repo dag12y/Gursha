@@ -31,15 +31,54 @@ export async function getMyRestaurantMenu() {
 }
 
 export async function addMyRestaurantMenuItem(payload) {
-    const response = await axiosInstance.post("/restaurants/menu/my", payload);
+    const hasFile = payload?.imageFile instanceof File;
+    const body = hasFile ? new FormData() : { ...payload };
+
+    if (hasFile) {
+        body.append("name", payload.name);
+        body.append("price", String(payload.price));
+        if (payload.description) {
+            body.append("description", payload.description);
+        }
+        if (payload.image) {
+            body.append("image", payload.image);
+        }
+        body.append("imageFile", payload.imageFile);
+    }
+
+    const response = await axiosInstance.post("/restaurants/menu/my", body, {
+        headers: hasFile
+            ? {
+                  "Content-Type": "multipart/form-data",
+              }
+            : undefined,
+    });
     return response.data?.item ?? null;
 }
 
 export async function updateMyRestaurantMenuItem(itemId, payload) {
-    const response = await axiosInstance.put(
-        `/restaurants/menu/my/${itemId}`,
-        payload,
-    );
+    const hasFile = payload?.imageFile instanceof File;
+    const body = hasFile ? new FormData() : { ...payload };
+
+    if (hasFile) {
+        if (payload.name !== undefined) body.append("name", payload.name);
+        if (payload.price !== undefined) body.append("price", String(payload.price));
+        if (payload.description !== undefined) {
+            body.append("description", payload.description);
+        }
+        if (payload.image !== undefined) {
+            body.append("image", payload.image);
+        }
+        body.append("imageFile", payload.imageFile);
+    }
+
+    const response = await axiosInstance.put(`/restaurants/menu/my/${itemId}`, body, {
+        headers: hasFile
+            ? {
+                  "Content-Type": "multipart/form-data",
+              }
+            : undefined,
+    });
     return response.data?.item ?? null;
 }
 

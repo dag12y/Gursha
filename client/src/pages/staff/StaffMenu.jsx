@@ -26,6 +26,8 @@ export default function StaffMenuPage() {
     const [price, setPrice] = useState("");
     const [description, setDescription] = useState("");
     const [image, setImage] = useState("");
+    const [imageMode, setImageMode] = useState("url");
+    const [imageFile, setImageFile] = useState(null);
 
     useEffect(() => {
         async function fetchMenu() {
@@ -39,6 +41,8 @@ export default function StaffMenuPage() {
                     draftPrice: String(item.price ?? ""),
                     draftDescription: item.description || "",
                     draftImage: item.image || "",
+                    draftImageMode: "url",
+                    draftImageFile: null,
                 }));
                 setMenu(normalized);
             } catch (error) {
@@ -67,7 +71,8 @@ export default function StaffMenuPage() {
                 name: name.trim(),
                 price: Number(price),
                 description: description.trim() || undefined,
-                image: image.trim() || undefined,
+                image: imageMode === "url" ? image.trim() || undefined : undefined,
+                imageFile: imageMode === "upload" ? imageFile : undefined,
             });
 
             if (created) {
@@ -80,6 +85,8 @@ export default function StaffMenuPage() {
                         draftPrice: String(created.price ?? ""),
                         draftDescription: created.description || "",
                         draftImage: created.image || "",
+                        draftImageMode: "url",
+                        draftImageFile: null,
                     },
                 ]);
             }
@@ -88,6 +95,8 @@ export default function StaffMenuPage() {
             setPrice("");
             setDescription("");
             setImage("");
+            setImageMode("url");
+            setImageFile(null);
             toast.success("Menu item added");
         } catch (error) {
             const message =
@@ -111,6 +120,8 @@ export default function StaffMenuPage() {
                           draftPrice: String(item.price ?? ""),
                           draftDescription: item.description || "",
                           draftImage: item.image || "",
+                          draftImageMode: "url",
+                          draftImageFile: null,
                       }
                     : item,
             ),
@@ -138,7 +149,14 @@ export default function StaffMenuPage() {
                 name: item.draftName.trim(),
                 price: Number(item.draftPrice),
                 description: item.draftDescription.trim() || undefined,
-                image: item.draftImage.trim() || undefined,
+                image:
+                    item.draftImageMode === "url"
+                        ? item.draftImage.trim() || undefined
+                        : undefined,
+                imageFile:
+                    item.draftImageMode === "upload"
+                        ? item.draftImageFile
+                        : undefined,
             });
 
             setMenu((prev) =>
@@ -153,6 +171,8 @@ export default function StaffMenuPage() {
                               draftDescription:
                                   updated?.description || item.draftDescription,
                               draftImage: updated?.image || item.draftImage,
+                              draftImageMode: "url",
+                              draftImageFile: null,
                           }
                         : entry,
                 ),
@@ -267,13 +287,48 @@ export default function StaffMenuPage() {
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="menu-image">Image URL</Label>
-                                <Input
-                                    id="menu-image"
-                                    value={image}
-                                    onChange={(event) => setImage(event.target.value)}
-                                    placeholder="https://..."
-                                />
+                                <Label>Image Source</Label>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant={imageMode === "url" ? "default" : "outline"}
+                                        onClick={() => setImageMode("url")}
+                                    >
+                                        URL
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={imageMode === "upload" ? "default" : "outline"}
+                                        onClick={() => setImageMode("upload")}
+                                    >
+                                        Upload
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                {imageMode === "url" ? (
+                                    <>
+                                        <Label htmlFor="menu-image">Image URL</Label>
+                                        <Input
+                                            id="menu-image"
+                                            value={image}
+                                            onChange={(event) => setImage(event.target.value)}
+                                            placeholder="https://..."
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Label htmlFor="menu-image-file">Upload Image</Label>
+                                        <Input
+                                            id="menu-image-file"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(event) =>
+                                                setImageFile(event.target.files?.[0] || null)
+                                            }
+                                        />
+                                    </>
+                                )}
                             </div>
                             <div className="md:col-span-2">
                                 <Button type="submit" disabled={submitting}>
@@ -378,18 +433,76 @@ export default function StaffMenuPage() {
                                                 />
                                             </div>
                                             <div className="space-y-2 md:col-span-2">
-                                                <Label>Image URL</Label>
-                                                <Input
-                                                    value={item.draftImage || ""}
-                                                    onChange={(event) =>
-                                                        updateDraft(
-                                                            item._id,
-                                                            "draftImage",
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="https://..."
-                                                />
+                                                <Label>Image Source</Label>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant={
+                                                            item.draftImageMode === "url"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        onClick={() =>
+                                                            updateDraft(
+                                                                item._id,
+                                                                "draftImageMode",
+                                                                "url",
+                                                            )
+                                                        }
+                                                    >
+                                                        URL
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant={
+                                                            item.draftImageMode === "upload"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        onClick={() =>
+                                                            updateDraft(
+                                                                item._id,
+                                                                "draftImageMode",
+                                                                "upload",
+                                                            )
+                                                        }
+                                                    >
+                                                        Upload
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                {item.draftImageMode === "url" ? (
+                                                    <>
+                                                        <Label>Image URL</Label>
+                                                        <Input
+                                                            value={item.draftImage || ""}
+                                                            onChange={(event) =>
+                                                                updateDraft(
+                                                                    item._id,
+                                                                    "draftImage",
+                                                                    event.target.value,
+                                                                )
+                                                            }
+                                                            placeholder="https://..."
+                                                        />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Label>Upload Image</Label>
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(event) =>
+                                                                updateDraft(
+                                                                    item._id,
+                                                                    "draftImageFile",
+                                                                    event.target.files?.[0] || null,
+                                                                )
+                                                            }
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                             <div className="md:col-span-2 flex gap-2">
                                                 <Button

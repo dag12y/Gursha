@@ -1,6 +1,7 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
 import { isAdmin, isStaff } from "../middleware/role.middleware.js";
+import upload from "../middleware/upload.middleware.js";
 import {
     addMenuItem,
     createRestaurant,
@@ -21,10 +22,6 @@ const restaurantRouter = express.Router();
 //@route Get api/restaurants/
 //@desc Get all restaurants
 restaurantRouter.get("/", getAllRestaurants);
-
-//@route Get api/restaurants/:id
-//@desc Get restaurant by id
-restaurantRouter.get("/:id", getRestaurantById);
 
 //@access Private
 
@@ -52,6 +49,7 @@ restaurantRouter.post(
     "/menu/my",
     authMiddleware,
     isStaff,
+    upload.single("imageFile"),
     [
         check("name", "Name is required").notEmpty(),
         check("price", "Price is required and must be a number").isFloat({
@@ -70,6 +68,7 @@ restaurantRouter.put(
     "/menu/my/:itemId",
     authMiddleware,
     isStaff,
+    upload.single("imageFile"),
     [
         check("name", "Name must not be empty").optional().notEmpty(),
         check("price", "Price must be a number")
@@ -90,6 +89,10 @@ restaurantRouter.delete(
     isStaff,
     deleteMenuItem,
 );
+
+//@route Get api/restaurants/:id
+//@desc Get restaurant by id
+restaurantRouter.get("/:id", getRestaurantById);
 
 
 //@route PUT api/restaurants/:id

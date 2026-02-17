@@ -1,5 +1,25 @@
 import Restaurant from '../models/Restaurant.js';
 import { validationResult } from 'express-validator';
+import cloudinary from "../config/cloudinary.js";
+
+function uploadBufferToCloudinary(buffer, folder) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder,
+                resource_type: "image",
+            },
+            (error, result) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(result);
+            },
+        );
+        stream.end(buffer);
+    });
+}
 
 export async function getAllRestaurants(req, res) {
     try {
@@ -67,11 +87,20 @@ export async function addMenuItem(req, res) {
             return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        let imageUrl = image;
+        if (req.file) {
+            const uploadResult = await uploadBufferToCloudinary(
+                req.file.buffer,
+                "gursha/menu",
+            );
+            imageUrl = uploadResult.secure_url;
+        }
+
         restaurant.menu.push({
             name,
             price: Number(price),
             description,
-            image,
+            image: imageUrl,
         });
         await restaurant.save();
 
@@ -111,10 +140,19 @@ export async function updateMenuItem(req, res) {
             return res.status(404).json({ message: "Menu item not found" });
         }
 
+        let imageUrl = image;
+        if (req.file) {
+            const uploadResult = await uploadBufferToCloudinary(
+                req.file.buffer,
+                "gursha/menu",
+            );
+            imageUrl = uploadResult.secure_url;
+        }
+
         if (name !== undefined) item.name = name;
         if (price !== undefined) item.price = Number(price);
         if (description !== undefined) item.description = description;
-        if (image !== undefined) item.image = image;
+        if (imageUrl !== undefined) item.image = imageUrl;
 
         await restaurant.save();
 
