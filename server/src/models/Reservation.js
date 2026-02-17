@@ -34,6 +34,32 @@ const reservationSchema = new mongoose.Schema(
             enum: ["Pending", "Confirmed", "Declined", "Seated", "Cancelled"],
             default: "Pending",
         },
+        statusHistory: [
+            {
+                status: {
+                    type: String,
+                    enum: [
+                        "Pending",
+                        "Confirmed",
+                        "Declined",
+                        "Seated",
+                        "Cancelled",
+                    ],
+                    required: true,
+                },
+                changedBy: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                },
+                changedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                note: {
+                    type: String,
+                },
+            },
+        ],
     },
     { timestamps: true },
 );

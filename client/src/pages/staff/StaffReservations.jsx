@@ -47,6 +47,16 @@ function formatDateTime(value) {
     });
 }
 
+function getActorName(actor) {
+    if (!actor) {
+        return "System";
+    }
+    if (typeof actor === "string") {
+        return "User";
+    }
+    return actor.name || actor.email || "User";
+}
+
 export default function StaffReservationsPage() {
     const navigate = useNavigate();
     const [reservations, setReservations] = useState([]);
@@ -230,6 +240,34 @@ export default function StaffReservationsPage() {
                                     </span>
                                 </div>
                             </div>
+
+                            {reservation.statusHistory?.length ? (
+                                <div className="pt-2">
+                                    <p className="text-sm font-medium mb-2">Status Timeline</p>
+                                    <div className="space-y-2">
+                                        {[...reservation.statusHistory]
+                                            .sort(
+                                                (a, b) =>
+                                                    new Date(b.changedAt).getTime() -
+                                                    new Date(a.changedAt).getTime(),
+                                            )
+                                            .map((entry, index) => (
+                                                <div
+                                                    key={`${entry.changedAt}-${index}`}
+                                                    className="text-xs text-muted-foreground"
+                                                >
+                                                    <span className="font-medium text-foreground">
+                                                        {entry.status}
+                                                    </span>
+                                                    {" • "}
+                                                    {formatDateTime(entry.changedAt)}
+                                                    {" • "}
+                                                    {getActorName(entry.changedBy)}
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            ) : null}
 
                             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                                 <label

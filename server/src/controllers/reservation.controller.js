@@ -3,6 +3,15 @@ import Restaurant from "../models/Restaurant.js";
 import Table from "../models/Table.js";
 import { validationResult } from "express-validator";
 
+function buildStatusHistoryEntry(status, changedBy, note) {
+    return {
+        status,
+        changedBy,
+        changedAt: new Date(),
+        note,
+    };
+}
+
 export async function createReservation(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -67,6 +76,13 @@ export async function createReservation(req, res) {
             endTime,
             partySize,
             user: req.user.userId,
+            statusHistory: [
+                buildStatusHistoryEntry(
+                    "Pending",
+                    req.user.userId,
+                    "Reservation created",
+                ),
+            ],
         });
 
 
@@ -101,7 +117,10 @@ export async function createReservation(req, res) {
 export async function getMyReservations(req, res) {
     try {
         // Fetch reservations for the logged-in user and populate restaurant and table details
-        const reservations = await Reservation.find({ user: req.user.userId }).populate("restaurant",'name').populate("table",'name capacity');
+        const reservations = await Reservation.find({ user: req.user.userId })
+            .populate("restaurant", "name")
+            .populate("table", "name capacity")
+            .populate("statusHistory.changedBy", "name email role");
 
         //check if reservations exist
         if (!reservations || reservations.length === 0) {
@@ -131,6 +150,13 @@ export async function cancelReservation(req, res) {
 
         // Update the reservation status to canceled
         reservation.status = "Cancelled";
+        reservation.statusHistory.push(
+            buildStatusHistoryEntry(
+                "Cancelled",
+                req.user.userId,
+                "Reservation cancelled by diner",
+            ),
+        );
         await reservation.save();
 
         return res.status(200).json({ message: "Reservation canceled successfully" });
@@ -148,7 +174,10 @@ export async function getRestaurantReservations(req, res) {
     const restaurantId = req.restaurantId;
     try {
         //find reservations for the restaurant
-        const reservations = await Reservation.find({ restaurant: restaurantId }).populate("table",'name capacity').populate("user",'name email');
+        const reservations = await Reservation.find({ restaurant: restaurantId })
+            .populate("table", "name capacity")
+            .populate("user", "name email")
+            .populate("statusHistory.changedBy", "name email role");
         
         //check if reservations exist
         if (!reservations || reservations.length === 0) {
@@ -182,6 +211,13 @@ export async function updateReservationStatus(req, res) {
 
         //update reservation status
         reservation.status = status;
+        reservation.statusHistory.push(
+            buildStatusHistoryEntry(
+                status,
+                req.user.userId,
+                "Reservation status updated by staff",
+            ),
+        );
         await reservation.save();
 
         return res.status(200).json({ message: "Reservation status updated successfully" ,reservation});

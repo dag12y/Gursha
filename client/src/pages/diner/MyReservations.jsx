@@ -26,6 +26,16 @@ function isCancelable(status) {
     return ["Pending", "Confirmed", "Seated"].includes(status);
 }
 
+function getActorName(actor) {
+    if (!actor) {
+        return "System";
+    }
+    if (typeof actor === "string") {
+        return "User";
+    }
+    return actor.name || actor.email || "User";
+}
+
 export default function MyReservationsPage() {
     const navigate = useNavigate();
     const [reservations, setReservations] = useState([]);
@@ -61,7 +71,20 @@ export default function MyReservationsPage() {
             await cancelReservation(id);
             setReservations((prev) =>
                 prev.map((item) =>
-                    item._id === id ? { ...item, status: "Cancelled" } : item,
+                    item._id === id
+                        ? {
+                              ...item,
+                              status: "Cancelled",
+                              statusHistory: [
+                                  ...(item.statusHistory || []),
+                                  {
+                                      status: "Cancelled",
+                                      changedAt: new Date().toISOString(),
+                                      changedBy: "You",
+                                  },
+                              ],
+                          }
+                        : item,
                 ),
             );
             toast.success("Reservation canceled successfully");
@@ -151,6 +174,34 @@ export default function MyReservationsPage() {
                                             : ""}
                                     </span>
                                 </div>
+
+                                {reservation.statusHistory?.length ? (
+                                    <div className="pt-2">
+                                        <p className="text-sm font-medium mb-2">Status Timeline</p>
+                                        <div className="space-y-2">
+                                            {[...reservation.statusHistory]
+                                                .sort(
+                                                    (a, b) =>
+                                                        new Date(b.changedAt).getTime() -
+                                                        new Date(a.changedAt).getTime(),
+                                                )
+                                                .map((entry, index) => (
+                                                    <div
+                                                        key={`${entry.changedAt}-${index}`}
+                                                        className="text-xs text-muted-foreground"
+                                                    >
+                                                        <span className="font-medium text-foreground">
+                                                            {entry.status}
+                                                        </span>
+                                                        {" • "}
+                                                        {formatDateTime(entry.changedAt)}
+                                                        {" • "}
+                                                        {getActorName(entry.changedBy)}
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                ) : null}
 
                                 {isCancelable(reservation.status) ? (
                                     <Button
