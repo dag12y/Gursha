@@ -15,6 +15,8 @@ import StaffTablesPage from "../pages/staff/StaffTables";
 import AdminHomePage from "../pages/admin/AdminHome";
 import AdminRestaurantsPage from "../pages/admin/AdminRestaurants";
 import AdminAssignStaffPage from "../pages/admin/AdminAssignStaff";
+import UnauthorizedPage from "../pages/Unauthorized";
+import NotFoundPage from "../pages/NotFound";
 
 function AppRouter() {
     return (
@@ -110,6 +112,8 @@ function AppRouter() {
                     </AdminRoute>
                 }
             />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 }

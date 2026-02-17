@@ -54,7 +54,16 @@ export default function StaffRoute({ children }) {
     const canAccessStaff = role === "staff";
 
     if (!canAccessStaff) {
-        return <Navigate to="/restaurants" replace />;
+        return (
+            <Navigate
+                to="/unauthorized"
+                replace
+                state={{
+                    from: location.pathname,
+                    requiredRole: "staff",
+                }}
+            />
+        );
     }
 
     return children;

@@ -51,7 +51,16 @@ export default function AdminRoute({ children }) {
     }
 
     if (user?.role !== "admin") {
-        return <Navigate to="/restaurants" replace />;
+        return (
+            <Navigate
+                to="/unauthorized"
+                replace
+                state={{
+                    from: location.pathname,
+                    requiredRole: "admin",
+                }}
+            />
+        );
     }
 
     return children;
