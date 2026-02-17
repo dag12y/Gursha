@@ -276,6 +276,9 @@ export default function StaffTablesPage() {
                         <Button variant="outline" onClick={() => navigate("/staff/reservations")}>
                             Reservations
                         </Button>
+                        <Button variant="outline" onClick={() => navigate("/staff/menu")}>
+                            Menu
+                        </Button>
                         <Button variant="outline" onClick={() => navigate("/staff/analytics")}>
                             Analytics
                         </Button>

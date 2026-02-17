@@ -115,6 +115,24 @@ export default function RestaurantsPage() {
                                     </div>
                                 ) : null}
 
+                                {restaurant.menu?.length ? (
+                                    <div className="pt-1">
+                                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                                            Menu Highlights
+                                        </p>
+                                        <div className="space-y-1">
+                                            {restaurant.menu.slice(0, 3).map((item, index) => (
+                                                <p
+                                                    key={`${restaurant._id}-menu-${index}`}
+                                                    className="text-xs text-muted-foreground"
+                                                >
+                                                    {item.name} - ${Number(item.price || 0).toFixed(2)}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : null}
+
                                 <Button
                                     className="w-full mt-4"
                                     onClick={() =>

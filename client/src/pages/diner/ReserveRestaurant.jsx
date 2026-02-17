@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function ReserveRestaurantPage() {
     const { id } = useParams();
@@ -139,7 +140,7 @@ export default function ReserveRestaurantPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <Card className="max-w-lg mx-auto">
+            <Card className="max-w-5xl mx-auto">
                 <CardHeader>
                     <CardTitle>Reserve at {restaurant.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">
@@ -147,71 +148,106 @@ export default function ReserveRestaurantPage() {
                     </p>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
-                            <Input
-                                id="date"
-                                type="date"
-                                min={today}
-                                value={date}
-                                onChange={(event) => setDate(event.target.value)}
-                                required
-                            />
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+                        <div className="space-y-3">
+                            <p className="text-sm font-medium">Full Menu</p>
+                            {restaurant.menu?.length ? (
+                                <div className="space-y-3">
+                                    {restaurant.menu.map((item, index) => (
+                                        <div
+                                            key={`${restaurant._id}-menu-item-${index}`}
+                                            className="flex items-start justify-between gap-3 text-sm"
+                                        >
+                                            <div>
+                                                <p className="font-medium">{item.name}</p>
+                                                {item.description ? (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.description}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <p className="text-sm font-medium">
+                                                ${Number(item.price || 0).toFixed(2)}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Menu is not available yet.
+                                </p>
+                            )}
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="time">Time</Label>
-                            <select
-                                id="time"
-                                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                value={time}
-                                onChange={(event) => setTime(event.target.value)}
-                                required
-                                disabled={loadingSlots || !availableSlots.length}
-                            >
-                                {!availableSlots.length ? (
-                                    <option value="">
-                                        {loadingSlots
-                                            ? "Loading slots..."
-                                            : "No available slots"}
-                                    </option>
-                                ) : (
-                                    availableSlots.map((slot) => (
-                                        <option key={slot.time} value={slot.time}>
-                                            {slot.time} ({slot.availableTables} table
-                                            {slot.availableTables === 1 ? "" : "s"} available)
+                        <Separator className="lg:hidden" />
+                        <Separator orientation="vertical" className="hidden lg:block h-full" />
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Input
+                                    id="date"
+                                    type="date"
+                                    min={today}
+                                    value={date}
+                                    onChange={(event) => setDate(event.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="time">Time</Label>
+                                <select
+                                    id="time"
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    value={time}
+                                    onChange={(event) => setTime(event.target.value)}
+                                    required
+                                    disabled={loadingSlots || !availableSlots.length}
+                                >
+                                    {!availableSlots.length ? (
+                                        <option value="">
+                                            {loadingSlots
+                                                ? "Loading slots..."
+                                                : "No available slots"}
                                         </option>
-                                    ))
-                                )}
-                            </select>
-                            <p className="text-xs text-muted-foreground">
-                                Showing available slots for selected date and party size.
-                            </p>
-                        </div>
+                                    ) : (
+                                        availableSlots.map((slot) => (
+                                            <option key={slot.time} value={slot.time}>
+                                                {slot.time} ({slot.availableTables} table
+                                                {slot.availableTables === 1 ? "" : "s"} available)
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
+                                <p className="text-xs text-muted-foreground">
+                                    Showing available slots for selected date and party size.
+                                </p>
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="partySize">Party size</Label>
-                            <Input
-                                id="partySize"
-                                type="number"
-                                min="1"
-                                max="20"
-                                value={partySize}
-                                onChange={(event) => setPartySize(event.target.value)}
-                                required
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="partySize">Party size</Label>
+                                <Input
+                                    id="partySize"
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    value={partySize}
+                                    onChange={(event) => setPartySize(event.target.value)}
+                                    required
+                                />
+                            </div>
 
-                        <div className="flex gap-3 pt-2">
-                            <Button type="button" variant="outline" onClick={() => navigate("/restaurants")}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" className="flex-1" disabled={submitting}>
-                                {submitting ? "Creating..." : "Confirm Reservation"}
-                            </Button>
-                        </div>
-                    </form>
+                            <div className="flex gap-3 pt-2">
+                                <Button type="button" variant="outline" onClick={() => navigate("/restaurants")}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" className="flex-1" disabled={submitting}>
+                                    {submitting ? "Creating..." : "Confirm Reservation"}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </CardContent>
             </Card>
         </div>

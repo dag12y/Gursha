@@ -1,11 +1,15 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.middleware.js";
-import { isAdmin } from "../middleware/role.middleware.js";
+import { isAdmin, isStaff } from "../middleware/role.middleware.js";
 import {
+    addMenuItem,
     createRestaurant,
+    deleteMenuItem,
     getAllRestaurants,
+    getMyRestaurantMenu,
     getRestaurantById,
     updateRestaurant,
+    updateMenuItem,
     deleteRestaurant,
 } from "../controllers/restaurant.controller.js";
 import { check } from "express-validator";
@@ -36,6 +40,49 @@ restaurantRouter.post(
         check("cuisine", "Cuisine is required").notEmpty(),
     ],
     createRestaurant,
+);
+
+//@route GET api/restaurants/menu/my
+//@desc Get menu for assigned staff restaurant
+restaurantRouter.get("/menu/my", authMiddleware, isStaff, getMyRestaurantMenu);
+
+//@route POST api/restaurants/menu/my
+//@desc Add menu item to assigned staff restaurant
+restaurantRouter.post(
+    "/menu/my",
+    authMiddleware,
+    isStaff,
+    [
+        check("name", "Name is required").notEmpty(),
+        check("price", "Price is required and must be a number").isFloat({
+            min: 0,
+        }),
+    ],
+    addMenuItem,
+);
+
+//@route PUT api/restaurants/menu/my/:itemId
+//@desc Update menu item for assigned staff restaurant
+restaurantRouter.put(
+    "/menu/my/:itemId",
+    authMiddleware,
+    isStaff,
+    [
+        check("name", "Name must not be empty").optional().notEmpty(),
+        check("price", "Price must be a number")
+            .optional()
+            .isFloat({ min: 0 }),
+    ],
+    updateMenuItem,
+);
+
+//@route DELETE api/restaurants/menu/my/:itemId
+//@desc Delete menu item for assigned staff restaurant
+restaurantRouter.delete(
+    "/menu/my/:itemId",
+    authMiddleware,
+    isStaff,
+    deleteMenuItem,
 );
 
 

@@ -104,6 +104,12 @@ export default function StaffAnalyticsPage() {
                         </Button>
                         <Button
                             variant="outline"
+                            onClick={() => navigate("/staff/menu")}
+                        >
+                            Manage Menu
+                        </Button>
+                        <Button
+                            variant="outline"
                             onClick={() => navigate("/staff/reservations")}
                         >
                             Manage Reservations

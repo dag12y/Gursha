@@ -28,6 +28,143 @@ export async function getRestaurantById(req, res) {
     }
 }
 
+export async function getMyRestaurantMenu(req, res) {
+    const restaurantId = req.restaurantId;
+    try {
+        const restaurant = await Restaurant.findById(restaurantId).select(
+            "name menu",
+        );
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+        return res.status(200).json({
+            restaurantId: restaurant._id,
+            restaurantName: restaurant.name,
+            menu: restaurant.menu || [],
+        });
+    } catch (error) {
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid restaurant ID" });
+        }
+        return res.status(500).json({
+            message: "Error fetching menu",
+            error: error.message,
+        });
+    }
+}
+
+export async function addMenuItem(req, res) {
+    const restaurantId = req.restaurantId;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const { name, price, description } = req.body;
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        restaurant.menu.push({
+            name,
+            price: Number(price),
+            description,
+        });
+        await restaurant.save();
+
+        return res.status(201).json({
+            message: "Menu item added successfully",
+            menu: restaurant.menu,
+            item: restaurant.menu[restaurant.menu.length - 1],
+        });
+    } catch (error) {
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid restaurant ID" });
+        }
+        return res.status(500).json({
+            message: "Error adding menu item",
+            error: error.message,
+        });
+    }
+}
+
+export async function updateMenuItem(req, res) {
+    const restaurantId = req.restaurantId;
+    const { itemId } = req.params;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const { name, price, description } = req.body;
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const item = restaurant.menu.id(itemId);
+        if (!item) {
+            return res.status(404).json({ message: "Menu item not found" });
+        }
+
+        if (name !== undefined) item.name = name;
+        if (price !== undefined) item.price = Number(price);
+        if (description !== undefined) item.description = description;
+
+        await restaurant.save();
+
+        return res.status(200).json({
+            message: "Menu item updated successfully",
+            menu: restaurant.menu,
+            item,
+        });
+    } catch (error) {
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
+        return res.status(500).json({
+            message: "Error updating menu item",
+            error: error.message,
+        });
+    }
+}
+
+export async function deleteMenuItem(req, res) {
+    const restaurantId = req.restaurantId;
+    const { itemId } = req.params;
+
+    try {
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const item = restaurant.menu.id(itemId);
+        if (!item) {
+            return res.status(404).json({ message: "Menu item not found" });
+        }
+
+        item.deleteOne();
+        await restaurant.save();
+
+        return res.status(200).json({
+            message: "Menu item deleted successfully",
+            menu: restaurant.menu,
+        });
+    } catch (error) {
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
+        return res.status(500).json({
+            message: "Error deleting menu item",
+            error: error.message,
+        });
+    }
+}
+
 export async function createRestaurant(req, res) {
     // Validate request
     const errors = validationResult(req);

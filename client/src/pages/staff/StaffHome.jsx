@@ -37,6 +37,12 @@ export default function StaffHomePage() {
                                 </Button>
                                 <Button
                                     variant="outline"
+                                    onClick={() => navigate("/staff/menu")}
+                                >
+                                    Manage Menu
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     onClick={() => navigate("/staff/analytics")}
                                 >
                                     View Analytics

@@ -12,6 +12,7 @@ import StaffHomePage from "../pages/staff/StaffHome";
 import StaffReservationsPage from "../pages/staff/StaffReservations";
 import StaffAnalyticsPage from "../pages/staff/StaffAnalytics";
 import StaffTablesPage from "../pages/staff/StaffTables";
+import StaffMenuPage from "../pages/staff/StaffMenu";
 import AdminHomePage from "../pages/admin/AdminHome";
 import AdminRestaurantsPage from "../pages/admin/AdminRestaurants";
 import AdminAssignStaffPage from "../pages/admin/AdminAssignStaff";
@@ -85,6 +86,14 @@ function AppRouter() {
                 element={
                     <StaffRoute>
                         <StaffTablesPage />
+                    </StaffRoute>
+                }
+            />
+            <Route
+                path="/staff/menu"
+                element={
+                    <StaffRoute>
+                        <StaffMenuPage />
                     </StaffRoute>
                 }
             />
