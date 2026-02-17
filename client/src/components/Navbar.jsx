@@ -3,10 +3,18 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+    ShieldCheck,
+    ChefHat,
+    Store,
+    CalendarCheck,
+    UserCircle2,
+    LogOut,
+} from "lucide-react";
 
 export default function Navbar() {
     const navigate = useNavigate();
-    const { user, isAuthenticated, refreshUser } = useAuth();
+    const { user, isAuthenticated, refreshUser, logout } = useAuth();
 
     useEffect(() => {
         if (!isAuthenticated || user) {
@@ -17,6 +25,12 @@ export default function Navbar() {
     }, [isAuthenticated, user, refreshUser]);
 
     function handleNavClick(item) {
+        if (item === "Logout") {
+            logout();
+            navigate("/login");
+            return;
+        }
+
         if (item === "Admin") {
             navigate("/admin");
             return;
@@ -59,20 +73,31 @@ export default function Navbar() {
                     {isAuthenticated ? (
                         <>
                             {[
-                                ...(user?.role === "admin" ? ["Admin"] : []),
-                                ...(user?.role === "staff" ? ["Staff"] : []),
-                                "Restaurant",
-                                "Reservation",
-                                "Profile",
-                            ].map((item) => (
-                                <Button
-                                    key={item}
-                                    variant="ghost"
-                                    onClick={() => handleNavClick(item)}
-                                >
-                                    {item}
-                                </Button>
-                            ))}
+                                ...(user?.role === "admin"
+                                    ? [{ key: "Admin", icon: ShieldCheck }]
+                                    : []),
+                                ...(user?.role === "staff"
+                                    ? [{ key: "Staff", icon: ChefHat }]
+                                    : []),
+                                { key: "Restaurant", icon: Store },
+                                { key: "Reservation", icon: CalendarCheck },
+                                { key: "Profile", icon: UserCircle2 },
+                                { key: "Logout", icon: LogOut },
+                            ].map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Button
+                                        key={item.key}
+                                        variant="ghost"
+                                        size="icon"
+                                        title={item.key}
+                                        aria-label={item.key}
+                                        onClick={() => handleNavClick(item.key)}
+                                    >
+                                        <Icon className="h-5 w-5" />
+                                    </Button>
+                                );
+                            })}
                             <span className="hidden sm:inline text-sm text-muted-foreground">
                                 {user?.name || "User"}
                             </span>
