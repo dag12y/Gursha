@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
+import VerifyEmailPage from "../pages/auth/VerifyEmail";
+import VerifyEmailSentPage from "../pages/auth/VerifyEmailSent";
 import Restaurant from "../pages/diner/Restaurants";
 import ReserveRestaurantPage from "../pages/diner/ReserveRestaurant";
 import MyReservationsPage from "../pages/diner/MyReservations";
@@ -25,6 +27,8 @@ function AppRouter() {
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/verify-email-sent" element={<VerifyEmailSentPage />} />
             <Route
                 path="/restaurants"
                 element={

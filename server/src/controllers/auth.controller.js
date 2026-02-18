@@ -1,45 +1,85 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { buildVerificationEmailHtml, sendEmail } from "../config/mailer.js";
 
 dotenv.config();
 
+const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+function createVerificationToken() {
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiresAt = new Date(Date.now() + VERIFICATION_EXPIRY_MS);
+
+    return { token, tokenHash, expiresAt };
+}
+
+function getFrontendBaseUrl() {
+    return process.env.FRONTEND_BASE_URL || "http://localhost:5173";
+}
+
+async function sendVerificationEmail(user, rawToken) {
+    const frontendBase = getFrontendBaseUrl();
+    const verificationUrl = `${frontendBase}/verify-email?email=${encodeURIComponent(user.email)}&token=${rawToken}`;
+
+    await sendEmail({
+        to: user.email,
+        subject: "Verify your email",
+        html: buildVerificationEmailHtml({
+            appName: "Gursha",
+            verificationUrl,
+        }),
+    });
+
+    if (!process.env.SMTP_HOST) {
+        console.info(`Verification URL (dev): ${verificationUrl}`);
+    }
+}
+
 export async function registerUser(req, res) {
     try {
-        // 1. Validate input
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
+        const normalizedEmail = email.toLowerCase();
 
-        // 2. Check if user exists
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // 3. Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+        const { token, tokenHash, expiresAt } = createVerificationToken();
 
-        // 4. Create user
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             password: hashedPassword,
+            isEmailVerified: false,
+            emailVerificationToken: tokenHash,
+            emailVerificationExpiresAt: expiresAt,
         });
 
-        // 5. Response
+        await sendVerificationEmail(user, token);
+
         return res.status(201).json({
-            message: "User registered successfully",
+            message:
+                "User registered successfully. Please verify your email before login.",
+            requiresVerification: true,
+            email: user.email,
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                isEmailVerified: user.isEmailVerified,
             },
         });
     } catch (error) {
@@ -52,27 +92,32 @@ export async function registerUser(req, res) {
 
 export async function loginUser(req, res) {
     try {
-        // 1. Validate input
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
         const { email, password } = req.body;
+        const normalizedEmail = email.toLowerCase();
 
-        // 2. Check if user exists
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // 3. Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // 4. Generate token
+        if (!user.isEmailVerified) {
+            return res.status(403).json({
+                message: "Please verify your email before logging in.",
+                requiresVerification: true,
+                email: user.email,
+            });
+        }
+
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
             expiresIn: "1d",
         });
@@ -88,11 +133,89 @@ export async function loginUser(req, res) {
     }
 }
 
+export async function verifyEmail(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const { email, token } = req.body;
+        const normalizedEmail = email.toLowerCase();
+        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid verification request" });
+        }
+
+        if (user.isEmailVerified) {
+            return res.status(200).json({ message: "Email is already verified" });
+        }
+
+        if (
+            !user.emailVerificationToken ||
+            user.emailVerificationToken !== tokenHash ||
+            !user.emailVerificationExpiresAt ||
+            user.emailVerificationExpiresAt < new Date()
+        ) {
+            return res.status(400).json({
+                message: "Verification link is invalid or has expired",
+            });
+        }
+
+        user.isEmailVerified = true;
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpiresAt = undefined;
+        await user.save();
+
+        return res.status(200).json({ message: "Email verified successfully" });
+    } catch (error) {
+        console.error("Verify email error:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+export async function resendVerificationEmail(req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+        const { email } = req.body;
+        const normalizedEmail = email.toLowerCase();
+
+        const user = await User.findOne({ email: normalizedEmail });
+        if (!user) {
+            return res.status(200).json({
+                message: "If this email exists, a verification link has been sent.",
+            });
+        }
+
+        if (user.isEmailVerified) {
+            return res.status(200).json({ message: "Email is already verified" });
+        }
+
+        const { token, tokenHash, expiresAt } = createVerificationToken();
+        user.emailVerificationToken = tokenHash;
+        user.emailVerificationExpiresAt = expiresAt;
+        await user.save();
+
+        await sendVerificationEmail(user, token);
+
+        return res.status(200).json({
+            message: "Verification email sent successfully",
+        });
+    } catch (error) {
+        console.error("Resend verification error:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
 export async function getCurrentUser(req, res) {
-    // req.user is set by authMiddleware
     const { userId } = req.user;
 
-    // Get user info
     try {
         const user = await User.findById(userId).select("-password");
         if (!user) {
@@ -102,7 +225,9 @@ export async function getCurrentUser(req, res) {
         return res.status(200).json({ message: "Current user info", user });
     } catch (error) {
         console.error("Get current user error:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
+        return res
+            .status(500)
+            .json({ message: "Server error", error: error.message });
     }
 }
 
@@ -127,14 +252,12 @@ export async function getAllUsers(req, res) {
 }
 
 export async function assignStaffRole(req, res) {
-    // Validate input
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
     try {
-        //get restaurantId and userId from request
         const { restaurantId } = req.body;
         const { userId } = req.params;
 
@@ -143,7 +266,6 @@ export async function assignStaffRole(req, res) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Update user
         user.role = "staff";
         user.restaurant = restaurantId;
 
@@ -155,11 +277,11 @@ export async function assignStaffRole(req, res) {
         });
     } catch (error) {
         console.error("Error assigning staff role:", error);
-        
-        if(error.kind == "ObjectId"){
+
+        if (error.kind == "ObjectId") {
             return res.status(400).json({
-                message:'Invalid Restaurant id.'
-            })
+                message: "Invalid Restaurant id.",
+            });
         }
         return res.status(500).json({
             message: "Server error",

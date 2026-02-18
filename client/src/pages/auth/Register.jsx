@@ -25,8 +25,9 @@ export default function Register() {
 
     try {
       setIsSubmitting(true);
-      await register(name, email, password);
-      navigate("/login");
+      const response = await register(name, email, password);
+      const targetEmail = response?.email || email;
+      navigate(`/verify-email-sent?email=${encodeURIComponent(targetEmail)}`);
     } catch (error) {
       console.error("Register failed:", error);
       toast.error(

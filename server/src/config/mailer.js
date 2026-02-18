@@ -1,0 +1,57 @@
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+function getTransporter() {
+    const hasSmtpConfig =
+        Boolean(process.env.SMTP_HOST) &&
+        Boolean(process.env.SMTP_PORT) &&
+        Boolean(process.env.SMTP_USER) &&
+        Boolean(process.env.SMTP_PASS);
+
+    if (!hasSmtpConfig) {
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: Number(process.env.SMTP_PORT) === 465,
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    });
+}
+
+export async function sendEmail({ to, subject, html }) {
+    const transporter = getTransporter();
+    if (!transporter) {
+        console.warn("SMTP config missing. Email not sent.");
+        return;
+    }
+
+    await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to,
+        subject,
+        html,
+    });
+}
+
+export function buildVerificationEmailHtml({ appName, verificationUrl }) {
+    return `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+            <h2>Verify your email</h2>
+            <p>Welcome to ${appName}. Please verify your email to activate your account.</p>
+            <p>
+                <a href="${verificationUrl}" style="display: inline-block; padding: 10px 16px; background: #111827; color: #ffffff; text-decoration: none; border-radius: 6px;">
+                    Verify Email
+                </a>
+            </p>
+            <p>If you did not create this account, you can ignore this email.</p>
+            <p style="font-size: 12px; color: #6b7280;">This link will expire in 24 hours.</p>
+        </div>
+    `;
+}

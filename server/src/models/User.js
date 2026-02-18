@@ -28,6 +28,16 @@ const userSchema = new mongoose.Schema(
             ref: "Restaurant",
             // Only staff will have this
         },
+        isEmailVerified: {
+            type: Boolean,
+            default: false,
+        },
+        emailVerificationToken: {
+            type: String,
+        },
+        emailVerificationExpiresAt: {
+            type: Date,
+        },
     },
     { timestamps: true },
 );
