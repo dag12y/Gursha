@@ -40,17 +40,18 @@ export async function createTable(req, res) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { restaurant, name, capacity } = req.body;
+    const { name, capacity } = req.body;
+    const restaurantId = req.restaurantId;
 
     try {
         // Check if the restaurant exists
-        const existingRestaurant = await Restaurant.findById(restaurant);
+        const existingRestaurant = await Restaurant.findById(restaurantId);
         if (!existingRestaurant) {
             return res.status(404).json({ error: "Restaurant not found" });
         }
 
         //prevent duplicate table names within the same restaurant
-        const existingTable = await Table.findOne({ restaurant, name });
+        const existingTable = await Table.findOne({ restaurant: restaurantId, name });
         if (existingTable) {
             return res.status(400).json({
                 error: "A table with this name already exists in the restaurant",
@@ -58,7 +59,11 @@ export async function createTable(req, res) {
         }
 
         // Create the new table
-        const table = await Table.create({ restaurant, name, capacity });
+        const table = await Table.create({
+            restaurant: restaurantId,
+            name,
+            capacity,
+        });
 
         return res
             .status(201)
@@ -76,6 +81,7 @@ export async function createTable(req, res) {
 
 export async function updateTable(req, res) {
     const { id } = req.params;
+    const restaurantId = req.restaurantId;
     try {
         // Extract the fields to update from the request body
         const { name, capacity, status } = req.body;
@@ -86,14 +92,21 @@ export async function updateTable(req, res) {
         if (capacity) updateData.capacity = capacity;
         if (status) updateData.status = status;
 
+        const existingTable = await Table.findById(id);
+        if (!existingTable) {
+            return res.status(404).json({ error: "Table not found" });
+        }
+
+        if (existingTable.restaurant.toString() !== restaurantId.toString()) {
+            return res.status(403).json({
+                error: "Access denied: Table does not belong to your restaurant",
+            });
+        }
+
         //find the table by id and update it with the new data from the request body
         const table = await Table.findByIdAndUpdate(id, updateData, {
             returnDocument: "after",
         });
-
-        if (!table) {
-            return res.status(404).json({ error: "Table not found" });
-        }
 
         return res.json({ message: "Table updated successfully", table });
     } catch (error) {
@@ -109,12 +122,21 @@ export async function updateTable(req, res) {
 
 export async function deleteTable(req, res) {
     const { id } = req.params;
+    const restaurantId = req.restaurantId;
     try {
-        //find the table by id and delete it from the database
-        const table = await Table.findByIdAndDelete(id);
+        const table = await Table.findById(id);
         if (!table) {
             return res.status(404).json({ error: "Table not found" });
         }
+
+        if (table.restaurant.toString() !== restaurantId.toString()) {
+            return res.status(403).json({
+                error: "Access denied: Table does not belong to your restaurant",
+            });
+        }
+
+        //find the table by id and delete it from the database
+        await table.deleteOne();
         return res.json({ message: "Table deleted successfully" });
     } catch (error) {
         console.error(error.message);

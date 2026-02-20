@@ -280,6 +280,7 @@ export async function getRestaurantReservations(req, res) {
 
 export async function updateReservationStatus(req, res) {
     const reservationId = req.params.id;
+    const restaurantId = req.restaurantId;
     try {
         //validate request body 
         const errors = validationResult(req);   
@@ -293,6 +294,13 @@ export async function updateReservationStatus(req, res) {
         const reservation = await Reservation.findById(reservationId);
         if (!reservation) {
             return res.status(404).json({ message: "Reservation not found" });
+        }
+
+        if (reservation.restaurant.toString() !== restaurantId.toString()) {
+            return res.status(403).json({
+                message:
+                    "Access denied: Reservation does not belong to your restaurant",
+            });
         }
 
         //update reservation status

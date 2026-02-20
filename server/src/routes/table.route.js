@@ -26,7 +26,6 @@ tableRouter.post(
     authMiddleware,
     isStaff,
     [
-        check("restaurant", "Restaurant ID is required").notEmpty(),
         check("name", "Table name is required").notEmpty(),
         check(
             "capacity",
