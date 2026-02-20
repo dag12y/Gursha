@@ -77,6 +77,15 @@ authRouter.get("/users", authMiddleware, isAdmin, getAllUsers);
 //@route Put /api/auth/assign-staff/:userId
 //@desc assign staff role to user
 //@access Private
-authRouter.put('/assign-staff/:userId', authMiddleware, isAdmin, assignStaffRole);
+authRouter.put(
+    "/assign-staff/:userId",
+    authMiddleware,
+    isAdmin,
+    [
+        check("userId", "Invalid user ID").isMongoId(),
+        check("restaurantId", "Invalid restaurant ID").isMongoId(),
+    ],
+    assignStaffRole,
+);
 
 export default authRouter;

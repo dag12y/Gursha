@@ -2,6 +2,7 @@ import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
+import Restaurant from "../models/Restaurant.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { buildVerificationEmailHtml, sendEmail } from "../config/mailer.js";
@@ -261,9 +262,20 @@ export async function assignStaffRole(req, res) {
         const { restaurantId } = req.body;
         const { userId } = req.params;
 
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ message: "Restaurant not found" });
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
+        }
+
+        if (user.role === "admin") {
+            return res.status(400).json({
+                message: "Cannot change admin role using this endpoint",
+            });
         }
 
         user.role = "staff";
@@ -271,9 +283,13 @@ export async function assignStaffRole(req, res) {
 
         await user.save();
 
+        const updatedUser = await User.findById(userId)
+            .select("-password")
+            .populate("restaurant", "name");
+
         return res.status(200).json({
             message: "User promoted to staff successfully",
-            user,
+            user: updatedUser,
         });
     } catch (error) {
         console.error("Error assigning staff role:", error);
