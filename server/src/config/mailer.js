@@ -1,7 +1,11 @@
 import nodemailer from "nodemailer";
+import dns from "node:dns";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+// Prefer IPv4 when resolving SMTP hosts (helps on platforms where IPv6 is unreachable).
+dns.setDefaultResultOrder("ipv4first");
 
 function getTransporter() {
     const hasSmtpConfig =
