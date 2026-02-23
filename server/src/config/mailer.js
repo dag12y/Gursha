@@ -18,6 +18,9 @@ function getTransporter() {
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT),
         secure: Number(process.env.SMTP_PORT) === 465,
+        connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000),
+        greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000),
+        socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 15000),
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
@@ -32,12 +35,19 @@ export async function sendEmail({ to, subject, html }) {
         return;
     }
 
-    await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to,
-        subject,
-        html,
-    });
+    try {
+        await transporter.sendMail({
+            from: process.env.SMTP_FROM || process.env.SMTP_USER,
+            to,
+            subject,
+            html,
+        });
+    } catch (error) {
+        const mailError = new Error("Email delivery failed");
+        mailError.code = "EMAIL_DELIVERY_FAILED";
+        mailError.cause = error;
+        throw mailError;
+    }
 }
 
 export function buildVerificationEmailHtml({ appName, verificationUrl }) {

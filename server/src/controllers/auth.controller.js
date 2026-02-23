@@ -23,6 +23,15 @@ function getFrontendBaseUrl() {
     return process.env.FRONTEND_BASE_URL || "http://localhost:5173";
 }
 
+function isEmailDeliveryFailure(error) {
+    return (
+        error?.code === "EMAIL_DELIVERY_FAILED" ||
+        error?.cause?.code === "ETIMEDOUT" ||
+        error?.cause?.code === "ECONNECTION" ||
+        error?.cause?.code === "ESOCKET"
+    );
+}
+
 async function sendVerificationEmail(user, rawToken) {
     const frontendBase = getFrontendBaseUrl();
     const verificationUrl = `${frontendBase}/verify-email?email=${encodeURIComponent(user.email)}&token=${rawToken}`;
@@ -69,7 +78,26 @@ export async function registerUser(req, res) {
             emailVerificationExpiresAt: expiresAt,
         });
 
-        await sendVerificationEmail(user, token);
+        try {
+            await sendVerificationEmail(user, token);
+        } catch (emailError) {
+            console.error("Verification email send failed during register:", emailError);
+            if (isEmailDeliveryFailure(emailError)) {
+                return res.status(201).json({
+                    message:
+                        "User registered, but verification email could not be sent right now. Please use resend verification shortly.",
+                    requiresVerification: true,
+                    email: user.email,
+                    user: {
+                        id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        isEmailVerified: user.isEmailVerified,
+                    },
+                });
+            }
+            throw emailError;
+        }
 
         return res.status(201).json({
             message:
@@ -203,7 +231,18 @@ export async function resendVerificationEmail(req, res) {
         user.emailVerificationExpiresAt = expiresAt;
         await user.save();
 
-        await sendVerificationEmail(user, token);
+        try {
+            await sendVerificationEmail(user, token);
+        } catch (emailError) {
+            console.error("Resend verification email failed:", emailError);
+            if (isEmailDeliveryFailure(emailError)) {
+                return res.status(503).json({
+                    message:
+                        "Verification email service is temporarily unavailable. Please try again in a minute.",
+                });
+            }
+            throw emailError;
+        }
 
         return res.status(200).json({
             message: "Verification email sent successfully",
