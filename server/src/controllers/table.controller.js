@@ -1,6 +1,8 @@
 import Restaurant from "../models/Restaurant.js";
 import Table from "../models/Table.js";
+import Reservation from "../models/Reservation.js";
 import { validationResult } from "express-validator";
+import { ACTIVE_RESERVATION_STATUSES } from "../constants/reservation-status.js";
 
 export async function getTablesByRestaurant(req, res) {
     // Get tables for a specific restaurant
@@ -13,15 +15,63 @@ export async function getTablesByRestaurant(req, res) {
         }
 
         // Get tables for the restaurant
-        const tables = await Table.find({ restaurant: restaurantId }).populate(
-            "restaurant",
-        );
+        const tables = await Table.find({ restaurant: restaurantId })
+            .populate("restaurant")
+            .lean();
         if (!tables) {
             return res
                 .status(404)
                 .json({ error: "No tables found for this restaurant" });
         }
-        return res.json({ message: "Tables retrieved successfully", tables });
+
+        // Derive live status from reservations so UI does not show reserved tables as available.
+        const now = new Date();
+        const reservations = await Reservation.find({
+            restaurant: restaurantId,
+            status: { $in: ACTIVE_RESERVATION_STATUSES },
+            endTime: { $gt: now },
+        }).select("table status startTime endTime");
+
+        const reservationStateByTable = new Map();
+        for (const reservation of reservations) {
+            const tableId = reservation.table?.toString();
+            if (!tableId) {
+                continue;
+            }
+
+            const isCurrentlySeated =
+                reservation.status === "Seated" &&
+                reservation.startTime <= now &&
+                reservation.endTime > now;
+
+            const existing = reservationStateByTable.get(tableId);
+            if (isCurrentlySeated || existing === "Occupied") {
+                reservationStateByTable.set(tableId, "Occupied");
+            } else {
+                reservationStateByTable.set(tableId, "Reserved");
+            }
+        }
+
+        const tablesWithEffectiveStatus = tables.map((table) => {
+            const derived = reservationStateByTable.get(table._id.toString());
+            if (!derived) {
+                return table;
+            }
+
+            // Respect explicit floor states if staff intentionally set them.
+            if (table.status === "Occupied" || table.status === "Finishing Up") {
+                return table;
+            }
+
+            return {
+                ...table,
+                status: derived,
+            };
+        });
+        return res.json({
+            message: "Tables retrieved successfully",
+            tables: tablesWithEffectiveStatus,
+        });
     } catch (error) {
         if (error.kind === "ObjectId") {
             return res.status(400).json({ error: "Invalid restaurant ID" });
