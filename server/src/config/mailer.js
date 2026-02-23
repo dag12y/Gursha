@@ -7,6 +7,10 @@ dotenv.config();
 // Prefer IPv4 when resolving SMTP hosts (helps on platforms where IPv6 is unreachable).
 dns.setDefaultResultOrder("ipv4first");
 
+function hasResendConfig() {
+    return Boolean(process.env.RESEND_API_KEY) && Boolean(process.env.RESEND_FROM);
+}
+
 function getTransporter() {
     const hasSmtpConfig =
         Boolean(process.env.SMTP_HOST) &&
@@ -33,10 +37,54 @@ function getTransporter() {
     });
 }
 
+async function sendWithResend({ to, subject, html }) {
+    const recipients = Array.isArray(to) ? to : [to];
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            from: process.env.RESEND_FROM,
+            to: recipients,
+            subject,
+            html,
+        }),
+    });
+
+    if (!response.ok) {
+        let details = "";
+        try {
+            const payload = await response.json();
+            details = payload?.message || JSON.stringify(payload);
+        } catch {
+            details = await response.text();
+        }
+        const error = new Error(
+            `Resend API error (${response.status}): ${details || "Unknown error"}`,
+        );
+        error.code = "ERESEND_API";
+        throw error;
+    }
+}
+
 export async function sendEmail({ to, subject, html }) {
+    if (hasResendConfig()) {
+        try {
+            await sendWithResend({ to, subject, html });
+            return;
+        } catch (error) {
+            const mailError = new Error("Email delivery failed");
+            mailError.code = "EMAIL_DELIVERY_FAILED";
+            mailError.cause = error;
+            throw mailError;
+        }
+    }
+
     const transporter = getTransporter();
     if (!transporter) {
-        console.warn("SMTP config missing. Email not sent.");
+        console.warn("Email provider config missing. Email not sent.");
         return;
     }
 
