@@ -12,8 +12,25 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/Gursha';
 const app = express();
 
+function getCorsOptions() {
+  const explicitOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : [];
+
+  if (explicitOrigins.length > 0) {
+    return { origin: explicitOrigins };
+  }
+
+  if (process.env.FRONTEND_BASE_URL) {
+    return { origin: process.env.FRONTEND_BASE_URL };
+  }
+
+  // Fallback for local development.
+  return {};
+}
+
 // Enable CORS
-app.use(cors());
+app.use(cors(getCorsOptions()));
 
 // Middleware
 app.use(express.json());
@@ -28,6 +45,10 @@ app.use('/api/reservations', reservationRouter);
 connectDB(MONGO_URI);
 app.get('/', (req, res) => {
   res.send('Hello, World!');
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ ok: true });
 });
 
 app.listen(PORT, () => {
