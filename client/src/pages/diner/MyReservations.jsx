@@ -23,7 +23,7 @@ function formatDateTime(value) {
 }
 
 function isCancelable(status) {
-    return ["Pending", "Confirmed", "Seated"].includes(status);
+    return ["Pending", "Confirmed"].includes(status);
 }
 
 function getActorName(actor) {

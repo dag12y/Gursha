@@ -12,6 +12,13 @@ import { Badge } from "@/components/ui/badge";
 
 const STATUS_OPTIONS = ["Pending", "Confirmed", "Declined", "Seated", "Cancelled"];
 const FILTER_OPTIONS = ["All", ...STATUS_OPTIONS];
+const ALLOWED_STATUS_TRANSITIONS = {
+    Pending: ["Confirmed", "Declined", "Cancelled"],
+    Confirmed: ["Seated", "Declined", "Cancelled"],
+    Declined: [],
+    Seated: [],
+    Cancelled: [],
+};
 
 function statusBadgeClass(status) {
     if (status === "Pending") {
@@ -55,6 +62,11 @@ function getActorName(actor) {
         return "User";
     }
     return actor.name || actor.email || "User";
+}
+
+function getSelectableStatuses(currentStatus) {
+    const nextStatuses = ALLOWED_STATUS_TRANSITIONS[currentStatus] || [];
+    return [currentStatus, ...nextStatuses];
 }
 
 export default function StaffReservationsPage() {
@@ -285,7 +297,10 @@ export default function StaffReservationsPage() {
                                         id={`status-${reservation._id}`}
                                         className="h-10 rounded-md border border-input bg-background px-3 text-sm"
                                         value={reservation.status}
-                                        disabled={savingId === reservation._id}
+                                        disabled={
+                                            savingId === reservation._id ||
+                                            getSelectableStatuses(reservation.status).length === 1
+                                        }
                                         onChange={(event) =>
                                             handleStatusChange(
                                                 reservation._id,
@@ -293,7 +308,7 @@ export default function StaffReservationsPage() {
                                             )
                                         }
                                     >
-                                        {STATUS_OPTIONS.map((status) => (
+                                        {getSelectableStatuses(reservation.status).map((status) => (
                                             <option key={status} value={status}>
                                                 {status}
                                             </option>

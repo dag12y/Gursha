@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { RESERVATION_STATUSES } from "../constants/reservation-status.js";
 
 const reservationSchema = new mongoose.Schema(
     {
@@ -31,20 +32,14 @@ const reservationSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["Pending", "Confirmed", "Declined", "Seated", "Cancelled"],
+            enum: RESERVATION_STATUSES,
             default: "Pending",
         },
         statusHistory: [
             {
                 status: {
                     type: String,
-                    enum: [
-                        "Pending",
-                        "Confirmed",
-                        "Declined",
-                        "Seated",
-                        "Cancelled",
-                    ],
+                    enum: RESERVATION_STATUSES,
                     required: true,
                 },
                 changedBy: {

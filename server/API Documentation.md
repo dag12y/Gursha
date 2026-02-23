@@ -280,7 +280,7 @@ Common auth errors:
 }
 ```
 - Validation in route allows:
-  - `Pending`, `Confirmed`, `Seated`, `Completed`, `Cancelled`
+  - `Pending`, `Confirmed`, `Declined`, `Seated`, `Cancelled`
 - Success response:
   - `200`
 ```json
@@ -601,5 +601,12 @@ Common auth errors:
 
 ## Notes / Current Implementation Gaps
 
-- `PUT /api/reservations/status/:id` route accepts `Completed`, but reservation model enum does not include `Completed` (model includes `Declined` instead). This can cause a server-side validation failure at save time.
-- `assign-staff` route currently has no `express-validator` checks, so missing `restaurantId` is not cleanly validated before DB operations.
+- No major gaps currently documented for reservation status validation.
+
+## Reservation Status Rules
+
+- Supported statuses: `Pending`, `Confirmed`, `Declined`, `Seated`, `Cancelled`
+- Allowed staff transitions:
+  - `Pending` -> `Confirmed`, `Declined`, `Cancelled`
+  - `Confirmed` -> `Seated`, `Declined`, `Cancelled`
+  - `Declined`, `Seated`, `Cancelled` are terminal

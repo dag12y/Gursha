@@ -11,6 +11,7 @@ import {
     getDashboardAnalytics,
 } from "../controllers/reservation.controller.js";
 import { check } from "express-validator";
+import { RESERVATION_STATUSES } from "../constants/reservation-status.js";
 
 const reservationRouter = express.Router();
 
@@ -67,7 +68,12 @@ reservationRouter.put(
     "/status/:id",
     authMiddleware,
     isStaff,
-    [check('status', 'Status is required and must be one of Pending, Confirmed, Declined, Seated, Cancelled').isIn(['Pending', 'Confirmed', 'Declined', 'Seated', 'Cancelled'])],
+    [
+        check(
+            "status",
+            `Status is required and must be one of ${RESERVATION_STATUSES.join(", ")}`,
+        ).isIn(RESERVATION_STATUSES),
+    ],
     updateReservationStatus,
 );
 

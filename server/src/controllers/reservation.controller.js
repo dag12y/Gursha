@@ -2,6 +2,11 @@ import Reservation from "../models/Reservation.js";
 import Restaurant from "../models/Restaurant.js";
 import Table from "../models/Table.js";
 import { validationResult } from "express-validator";
+import {
+    ACTIVE_RESERVATION_STATUSES,
+    canTransitionReservationStatus,
+    DINER_CANCELLABLE_STATUSES,
+} from "../constants/reservation-status.js";
 
 function buildStatusHistoryEntry(status, changedBy, note) {
     return {
@@ -53,7 +58,7 @@ export async function getAvailableTimeSlots(req, res) {
 
         const activeReservations = await Reservation.find({
             restaurant,
-            status: { $in: ["Pending", "Confirmed", "Seated"] },
+            status: { $in: ACTIVE_RESERVATION_STATUSES },
             startTime: { $lt: endOfDay },
             endTime: { $gt: startOfDay },
         }).select("table startTime endTime");
@@ -135,7 +140,7 @@ export async function createReservation(req, res) {
         // Find reserved tables at that date/time
         const reservedTables = await Reservation.find({
             restaurant,
-            status: { $in: ["Pending", "Confirmed", "Seated"] },
+            status: { $in: ACTIVE_RESERVATION_STATUSES },
             startTime: { $lt: endTime },
             endTime: { $gt: startTime },
         }).select("table");
@@ -234,6 +239,12 @@ export async function cancelReservation(req, res) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
+        if (!DINER_CANCELLABLE_STATUSES.includes(reservation.status)) {
+            return res.status(400).json({
+                message: `Reservation cannot be cancelled when status is ${reservation.status}`,
+            });
+        }
+
         // Update the reservation status to canceled
         reservation.status = "Cancelled";
         reservation.statusHistory.push(
@@ -264,7 +275,7 @@ export async function getRestaurantReservations(req, res) {
             .populate("table", "name capacity")
             .populate("user", "name email")
             .populate("statusHistory.changedBy", "name email role");
-        
+
         //check if reservations exist
         if (!reservations || reservations.length === 0) {
             return res.status(404).json({ message: "No reservations found for this restaurant" });
@@ -300,6 +311,12 @@ export async function updateReservationStatus(req, res) {
             return res.status(403).json({
                 message:
                     "Access denied: Reservation does not belong to your restaurant",
+            });
+        }
+
+        if (!canTransitionReservationStatus(reservation.status, status)) {
+            return res.status(400).json({
+                message: `Invalid status transition from ${reservation.status} to ${status}`,
             });
         }
 
