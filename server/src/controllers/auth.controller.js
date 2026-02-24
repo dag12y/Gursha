@@ -45,7 +45,7 @@ async function sendVerificationEmail(user, rawToken) {
         }),
     });
 
-    if (!process.env.SMTP_HOST) {
+    if (!process.env.SMTP_HOST && !process.env.RESEND_API_KEY) {
         console.info(`Verification URL (dev): ${verificationUrl}`);
     }
 }

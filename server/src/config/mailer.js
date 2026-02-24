@@ -11,14 +11,17 @@ function hasResendConfig() {
     return Boolean(process.env.RESEND_API_KEY) && Boolean(process.env.RESEND_FROM);
 }
 
-function getTransporter() {
-    const hasSmtpConfig =
+function hasSmtpConfig() {
+    return (
         Boolean(process.env.SMTP_HOST) &&
         Boolean(process.env.SMTP_PORT) &&
         Boolean(process.env.SMTP_USER) &&
-        Boolean(process.env.SMTP_PASS);
+        Boolean(process.env.SMTP_PASS)
+    );
+}
 
-    if (!hasSmtpConfig) {
+function getTransporter() {
+    if (!hasSmtpConfig()) {
         return null;
     }
 
@@ -69,38 +72,73 @@ async function sendWithResend({ to, subject, html }) {
     }
 }
 
-export async function sendEmail({ to, subject, html }) {
-    if (hasResendConfig()) {
-        try {
-            await sendWithResend({ to, subject, html });
-            return;
-        } catch (error) {
-            const mailError = new Error("Email delivery failed");
-            mailError.code = "EMAIL_DELIVERY_FAILED";
-            mailError.cause = error;
-            throw mailError;
-        }
-    }
-
+async function sendWithSmtp({ to, subject, html }) {
     const transporter = getTransporter();
     if (!transporter) {
+        const error = new Error("SMTP provider config missing");
+        error.code = "ESMTP_CONFIG";
+        throw error;
+    }
+
+    await transporter.sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to,
+        subject,
+        html,
+    });
+}
+
+function buildProviderOrder() {
+    const preferredProvider = (process.env.EMAIL_PROVIDER || "auto").toLowerCase();
+    const resendReady = hasResendConfig();
+    const smtpReady = hasSmtpConfig();
+
+    if (preferredProvider === "resend") {
+        return ["resend", "smtp"].filter((provider) =>
+            provider === "resend" ? resendReady : smtpReady,
+        );
+    }
+
+    if (preferredProvider === "smtp") {
+        return ["smtp", "resend"].filter((provider) =>
+            provider === "smtp" ? smtpReady : resendReady,
+        );
+    }
+
+    // auto: prefer API-based delivery first because many hosts (including Railway)
+    // restrict outbound SMTP ports.
+    return ["resend", "smtp"].filter((provider) =>
+        provider === "resend" ? resendReady : smtpReady,
+    );
+}
+
+export async function sendEmail({ to, subject, html }) {
+    const providerOrder = buildProviderOrder();
+    if (providerOrder.length === 0) {
         console.warn("Email provider config missing. Email not sent.");
         return;
     }
 
-    try {
-        await transporter.sendMail({
-            from: process.env.SMTP_FROM || process.env.SMTP_USER,
-            to,
-            subject,
-            html,
-        });
-    } catch (error) {
-        const mailError = new Error("Email delivery failed");
-        mailError.code = "EMAIL_DELIVERY_FAILED";
-        mailError.cause = error;
-        throw mailError;
+    let lastError = null;
+
+    for (const provider of providerOrder) {
+        try {
+            if (provider === "resend") {
+                await sendWithResend({ to, subject, html });
+            } else {
+                await sendWithSmtp({ to, subject, html });
+            }
+            return;
+        } catch (error) {
+            lastError = error;
+            console.error(`Email send failed via ${provider}:`, error);
+        }
     }
+
+    const mailError = new Error("Email delivery failed");
+    mailError.code = "EMAIL_DELIVERY_FAILED";
+    mailError.cause = lastError;
+    throw mailError;
 }
 
 export function buildVerificationEmailHtml({ appName, verificationUrl }) {
