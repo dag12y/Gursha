@@ -6,18 +6,32 @@ import { getAllRestaurants } from "@/api/restaurant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import RestaurantImageSlider from "@/components/RestaurantImageSlider";
 
 export default function RestaurantsPage() {
     const navigate = useNavigate();
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [pagination, setPagination] = useState(null);
+    const [page, setPage] = useState(1);
+    const [filters, setFilters] = useState({
+        search: "",
+        cuisine: "",
+        location: "",
+        priceRange: "",
+    });
 
     useEffect(() => {
         async function fetchRestaurants() {
             try {
-                const data = await getAllRestaurants();
-                setRestaurants(Array.isArray(data) ? data : []);
+                const response = await getAllRestaurants({
+                    ...filters,
+                    page,
+                    limit: 9,
+                });
+                setRestaurants(Array.isArray(response?.data) ? response.data : []);
+                setPagination(response?.pagination || null);
             } catch (error) {
                 const message =
                     error?.response?.data?.message || "Failed to load restaurants";
@@ -28,7 +42,12 @@ export default function RestaurantsPage() {
         }
 
         fetchRestaurants();
-    }, []);
+    }, [filters, page]);
+
+    function updateFilter(field, value) {
+        setPage(1);
+        setFilters((prev) => ({ ...prev, [field]: value }));
+    }
 
     if (loading) {
         return (
@@ -71,6 +90,47 @@ export default function RestaurantsPage() {
                     Browse available places and pick one to reserve later.
                 </p>
             </div>
+
+            <Card className="mb-6">
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <Input
+                            placeholder="Search name/cuisine/location"
+                            value={filters.search}
+                            onChange={(event) =>
+                                updateFilter("search", event.target.value)
+                            }
+                        />
+                        <Input
+                            placeholder="Cuisine (e.g. Italian)"
+                            value={filters.cuisine}
+                            onChange={(event) =>
+                                updateFilter("cuisine", event.target.value)
+                            }
+                        />
+                        <Input
+                            placeholder="Location"
+                            value={filters.location}
+                            onChange={(event) =>
+                                updateFilter("location", event.target.value)
+                            }
+                        />
+                        <select
+                            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            value={filters.priceRange}
+                            onChange={(event) =>
+                                updateFilter("priceRange", event.target.value)
+                            }
+                        >
+                            <option value="">All price ranges</option>
+                            <option value="$">$</option>
+                            <option value="$$">$$</option>
+                            <option value="$$$">$$$</option>
+                            <option value="$$$$">$$$$</option>
+                        </select>
+                    </div>
+                </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {restaurants.map((restaurant) => {
@@ -146,6 +206,31 @@ export default function RestaurantsPage() {
                     );
                 })}
             </div>
+
+            {pagination ? (
+                <div className="mt-6 flex items-center justify-between gap-3">
+                    <p className="text-sm text-muted-foreground">
+                        Page {pagination.page} of {pagination.totalPages} (
+                        {pagination.total} results)
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            disabled={!pagination.hasPrevPage}
+                            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            disabled={!pagination.hasNextPage}
+                            onClick={() => setPage((prev) => prev + 1)}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

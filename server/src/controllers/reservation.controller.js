@@ -29,6 +29,16 @@ function generateTimeSlots(intervalMinutes = 30) {
     return slots;
 }
 
+function parsePagination(query) {
+    const page = Math.max(Number.parseInt(query.page || "1", 10), 1);
+    const limit = Math.min(
+        Math.max(Number.parseInt(query.limit || "10", 10), 1),
+        100,
+    );
+    const skip = (page - 1) * limit;
+    return { page, limit, skip };
+}
+
 export async function getAvailableTimeSlots(req, res) {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -207,18 +217,47 @@ export async function createReservation(req, res) {
 
 export async function getMyReservations(req, res) {
     try {
-        // Fetch reservations for the logged-in user and populate restaurant and table details
-        const reservations = await Reservation.find({ user: req.user.userId })
-            .populate("restaurant", "name")
-            .populate("table", "name capacity")
-            .populate("statusHistory.changedBy", "name email role");
+        const { page, limit, skip } = parsePagination(req.query);
+        const filter = { user: req.user.userId };
 
-        //check if reservations exist
-        if (!reservations || reservations.length === 0) {
-            return res.status(404).json({ message: "No reservations found" });
+        if (req.query.status) {
+            filter.status = req.query.status;
         }
 
-        return res.status(200).json({ reservations });
+        if (req.query.dateFrom || req.query.dateTo) {
+            filter.startTime = {};
+            if (req.query.dateFrom) {
+                filter.startTime.$gte = new Date(req.query.dateFrom);
+            }
+            if (req.query.dateTo) {
+                filter.startTime.$lte = new Date(req.query.dateTo);
+            }
+        }
+
+        const [reservations, total] = await Promise.all([
+            Reservation.find(filter)
+                .sort({ startTime: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate("restaurant", "name")
+                .populate("table", "name capacity")
+                .populate("statusHistory.changedBy", "name email role"),
+            Reservation.countDocuments(filter),
+        ]);
+
+        const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+        return res.status(200).json({
+            reservations,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
     } catch (error) {
         console.error("Error fetching reservations:", error);
         return res.status(500).json({ message: "Server error", error: error.message });
@@ -270,18 +309,48 @@ export async function cancelReservation(req, res) {
 export async function getRestaurantReservations(req, res) {
     const restaurantId = req.restaurantId;
     try {
-        //find reservations for the restaurant
-        const reservations = await Reservation.find({ restaurant: restaurantId })
-            .populate("table", "name capacity")
-            .populate("user", "name email")
-            .populate("statusHistory.changedBy", "name email role");
+        const { page, limit, skip } = parsePagination(req.query);
+        const filter = { restaurant: restaurantId };
 
-        //check if reservations exist
-        if (!reservations || reservations.length === 0) {
-            return res.status(404).json({ message: "No reservations found for this restaurant" });
+        if (req.query.status) {
+            filter.status = req.query.status;
         }
 
-        return res.status(200).json({ message: "Reservations fetched successfully", reservations });
+        if (req.query.dateFrom || req.query.dateTo) {
+            filter.startTime = {};
+            if (req.query.dateFrom) {
+                filter.startTime.$gte = new Date(req.query.dateFrom);
+            }
+            if (req.query.dateTo) {
+                filter.startTime.$lte = new Date(req.query.dateTo);
+            }
+        }
+
+        const [reservations, total] = await Promise.all([
+            Reservation.find(filter)
+                .sort({ startTime: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate("table", "name capacity")
+                .populate("user", "name email")
+                .populate("statusHistory.changedBy", "name email role"),
+            Reservation.countDocuments(filter),
+        ]);
+
+        const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+        return res.status(200).json({
+            message: "Reservations fetched successfully",
+            reservations,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
 
     } catch (error) {
         console.error("Error fetching restaurant reservations:", error);

@@ -40,8 +40,8 @@ export default function AdminRestaurantsPage() {
     useEffect(() => {
         async function fetchRestaurants() {
             try {
-                const data = await getAllRestaurants();
-                const normalized = (Array.isArray(data) ? data : []).map((restaurant) => ({
+                const response = await getAllRestaurants({ page: 1, limit: 100 });
+                const normalized = (Array.isArray(response?.data) ? response.data : []).map((restaurant) => ({
                     ...restaurant,
                     editing: false,
                     draftName: restaurant.name || "",

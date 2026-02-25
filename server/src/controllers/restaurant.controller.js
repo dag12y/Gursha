@@ -23,9 +23,54 @@ function uploadBufferToCloudinary(buffer, folder) {
 
 export async function getAllRestaurants(req, res) {
     try {
-        //find all restaurants
-        const restaurants = await Restaurant.find();
-        return res.status(200).json({ data: restaurants});
+        const page = Math.max(Number.parseInt(req.query.page || "1", 10), 1);
+        const limit = Math.min(
+            Math.max(Number.parseInt(req.query.limit || "12", 10), 1),
+            100,
+        );
+        const skip = (page - 1) * limit;
+
+        const query = {};
+        const search = (req.query.search || "").trim();
+        const cuisine = (req.query.cuisine || "").trim();
+        const location = (req.query.location || "").trim();
+        const priceRange = (req.query.priceRange || "").trim();
+
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { cuisine: { $regex: search, $options: "i" } },
+                { location: { $regex: search, $options: "i" } },
+            ];
+        }
+        if (cuisine) {
+            query.cuisine = { $regex: cuisine, $options: "i" };
+        }
+        if (location) {
+            query.location = { $regex: location, $options: "i" };
+        }
+        if (priceRange) {
+            query.priceRange = priceRange;
+        }
+
+        const [restaurants, total] = await Promise.all([
+            Restaurant.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit),
+            Restaurant.countDocuments(query),
+        ]);
+
+        const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+        return res.status(200).json({
+            data: restaurants,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
     } catch (error) {
         return res.status(500).json({ message: 'Error fetching restaurants', error:error.message });
     }

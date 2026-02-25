@@ -1,8 +1,11 @@
 import axiosInstance from "@/utils/axiosInstance";
 
-export async function getAllRestaurants() {
-    const response = await axiosInstance.get("/restaurants");
-    return response.data?.data ?? [];
+export async function getAllRestaurants(params = {}) {
+    const response = await axiosInstance.get("/restaurants", { params });
+    return {
+        data: response.data?.data ?? [],
+        pagination: response.data?.pagination ?? null,
+    };
 }
 
 export async function getRestaurantById(id) {

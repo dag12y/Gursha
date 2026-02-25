@@ -16,8 +16,8 @@ export async function getAvailableTimeSlots(restaurant, date, partySize) {
     return response.data?.slots ?? [];
 }
 
-export async function getMyReservations() {
-    const response = await axiosInstance.get("/reservations/my");
+export async function getMyReservations(params = {}) {
+    const response = await axiosInstance.get("/reservations/my", { params });
     return response.data?.reservations ?? [];
 }
 
@@ -26,8 +26,10 @@ export async function cancelReservation(id) {
     return response.data;
 }
 
-export async function getRestaurantReservations() {
-    const response = await axiosInstance.get("/reservations/restaurant");
+export async function getRestaurantReservations(params = {}) {
+    const response = await axiosInstance.get("/reservations/restaurant", {
+        params,
+    });
     return response.data?.reservations ?? [];
 }
 

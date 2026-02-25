@@ -34,8 +34,8 @@ export default function AdminAssignStaffPage() {
 
         async function fetchRestaurants() {
             try {
-                const data = await getAllRestaurants();
-                setRestaurants(Array.isArray(data) ? data : []);
+                const response = await getAllRestaurants({ page: 1, limit: 100 });
+                setRestaurants(Array.isArray(response?.data) ? response.data : []);
             } catch (error) {
                 const message =
                     error?.response?.data?.message || "Failed to fetch restaurants";
