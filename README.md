@@ -127,5 +127,4 @@ TEST_MONGO_URI=mongodb://127.0.0.1:27017/gursha_test npm run test --prefix serve
 
 ## Demo Deliverables Placeholders
 - Live app: `https://gursha-gamma.vercel.app/`
-- Demo video (2-4 min): `<add-video-link>`
 - GitHub repo: `https://github.com/dag12y/Gursha`
