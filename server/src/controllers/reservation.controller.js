@@ -1,4 +1,5 @@
 import Reservation from "../models/Reservation.js";
+import ReservationSlot from "../models/ReservationSlot.js";
 import Restaurant from "../models/Restaurant.js";
 import Table from "../models/Table.js";
 import { validationResult } from "express-validator";
@@ -37,6 +38,15 @@ function parsePagination(query) {
     );
     const skip = (page - 1) * limit;
     return { page, limit, skip };
+}
+
+function buildReservationSlots(startTime, endTime, intervalMinutes = 30) {
+    const slots = [];
+    const intervalMs = intervalMinutes * 60 * 1000;
+    for (let cursor = startTime.getTime(); cursor < endTime.getTime(); cursor += intervalMs) {
+        slots.push(new Date(cursor));
+    }
+    return slots;
 }
 
 export async function getAvailableTimeSlots(req, res) {
@@ -158,38 +168,67 @@ export async function createReservation(req, res) {
 
         const reservedTableIds = reservedTables.map((r) => r.table.toString());
 
-        // Find first available table
-        const availableTable = candidateTables.find(
+        const candidateAvailableTables = candidateTables.filter(
             (table) => !reservedTableIds.includes(table._id.toString()),
         );
 
-        if (!availableTable) {
+        if (candidateAvailableTables.length === 0) {
             return res.status(400).json({
                 message: "No available tables for selected time",
             });
         }
 
-        // Create reservation using AUTO selected table and Handle time conflict
-        const reservation = await Reservation.create({
-            restaurant,
-            table: availableTable._id,
-            startTime,
-            endTime,
-            partySize,
-            user: req.user.userId,
-            statusHistory: [
-                buildStatusHistoryEntry(
-                    "Pending",
-                    req.user.userId,
-                    "Reservation created",
-                ),
-            ],
-        });
+        // Ensure unique slot index exists before lock attempts.
+        await ReservationSlot.init();
 
+        const slotTimes = buildReservationSlots(startTime, endTime, 30);
 
-        return res.status(201).json({
-            message: "Reservation created successfully",
-            reservation,
+        for (const table of candidateAvailableTables) {
+            const reservation = await Reservation.create({
+                restaurant,
+                table: table._id,
+                startTime,
+                endTime,
+                partySize,
+                user: req.user.userId,
+                statusHistory: [
+                    buildStatusHistoryEntry(
+                        "Pending",
+                        req.user.userId,
+                        "Reservation created",
+                    ),
+                ],
+            });
+
+            try {
+                await ReservationSlot.insertMany(
+                    slotTimes.map((slotTime) => ({
+                        reservation: reservation._id,
+                        restaurant,
+                        table: table._id,
+                        slotTime,
+                    })),
+                    { ordered: true },
+                );
+
+                return res.status(201).json({
+                    message: "Reservation created successfully",
+                    reservation,
+                });
+            } catch (slotError) {
+                await Reservation.deleteOne({ _id: reservation._id });
+
+                if (slotError.code === 11000) {
+                    // Another concurrent request took this table slot, try next table.
+                    continue;
+                }
+
+                throw slotError;
+            }
+        }
+
+        return res.status(400).json({
+            message: "No available tables for selected time",
         });
     } catch (error) {
         console.error("Error creating reservation:", error);
@@ -294,6 +333,7 @@ export async function cancelReservation(req, res) {
             ),
         );
         await reservation.save();
+        await ReservationSlot.deleteMany({ reservation: reservation._id });
 
         return res.status(200).json({ message: "Reservation canceled successfully" });
     } catch (error) {
@@ -399,6 +439,9 @@ export async function updateReservationStatus(req, res) {
             ),
         );
         await reservation.save();
+        if (status === "Cancelled" || status === "Declined") {
+            await ReservationSlot.deleteMany({ reservation: reservation._id });
+        }
 
         return res.status(200).json({ message: "Reservation status updated successfully" ,reservation});
     } catch (error) {

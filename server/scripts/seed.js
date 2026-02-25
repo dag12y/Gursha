@@ -6,6 +6,7 @@ import User from "../src/models/User.js";
 import Restaurant from "../src/models/Restaurant.js";
 import Table from "../src/models/Table.js";
 import Reservation from "../src/models/Reservation.js";
+import ReservationSlot from "../src/models/ReservationSlot.js";
 
 dotenv.config();
 
@@ -18,10 +19,20 @@ function daysFromNow(days, hour, minute = 0) {
     return date;
 }
 
+function buildReservationSlots(startTime, endTime, intervalMinutes = 30) {
+    const slots = [];
+    const intervalMs = intervalMinutes * 60 * 1000;
+    for (let cursor = startTime.getTime(); cursor < endTime.getTime(); cursor += intervalMs) {
+        slots.push(new Date(cursor));
+    }
+    return slots;
+}
+
 async function seed() {
     await connectDB(MONGO_URI);
 
     await Promise.all([
+        ReservationSlot.deleteMany({}),
         Reservation.deleteMany({}),
         Table.deleteMany({}),
         Restaurant.deleteMany({}),
@@ -101,7 +112,7 @@ async function seed() {
     const tableA2 = tables.find((table) => table.name === "A2");
     const tableA3 = tables.find((table) => table.name === "A3");
 
-    await Reservation.create([
+    const reservations = await Reservation.create([
         {
             user: diner._id,
             restaurant: restaurantA._id,
@@ -123,6 +134,18 @@ async function seed() {
             statusHistory: [{ status: "Pending", changedBy: diner._id, note: "Created" }],
         },
     ]);
+
+    const slotDocs = reservations.flatMap((reservation) =>
+        buildReservationSlots(reservation.startTime, reservation.endTime).map(
+            (slotTime) => ({
+                reservation: reservation._id,
+                restaurant: reservation.restaurant,
+                table: reservation.table,
+                slotTime,
+            }),
+        ),
+    );
+    await ReservationSlot.insertMany(slotDocs);
 
     console.log("Seed complete.");
     console.log("Admin: admin@gursha.dev / password123");

@@ -32,10 +32,12 @@ test.before(async () => {
         await mongoose.connect(uri);
         return;
     } catch (error) {
-        const fallbackUri =
-            process.env.TEST_MONGO_URI ||
-            process.env.MONGO_URI ||
-            "mongodb://127.0.0.1:27017/gursha_test";
+        const fallbackUri = process.env.TEST_MONGO_URI;
+        if (!fallbackUri) {
+            throw new Error(
+                "MongoMemoryServer download failed and TEST_MONGO_URI is not set. Refusing to use MONGO_URI to avoid wiping non-test data.",
+            );
+        }
 
         console.warn(
             `MongoMemoryServer unavailable (${error.code || "unknown"}). Falling back to ${fallbackUri}`,

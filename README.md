@@ -23,6 +23,7 @@ Gursha is a full-stack reservation platform with three roles:
 - Reservation flow:
   - availability lookup by date/time/party size
   - booking with auto table assignment
+  - concurrent booking protection via per-table time-slot unique locks
   - cancellation by diner
   - status management by staff
 - Table management by staff (CRUD + status)
@@ -104,6 +105,12 @@ Includes integration coverage for:
 - auth flow (register/login/me)
 - reservation flow (create/cancel)
 
+If your network blocks MongoDB binary download for `mongodb-memory-server`, use an explicit test-only DB:
+
+```bash
+TEST_MONGO_URI=mongodb://127.0.0.1:27017/gursha_test npm run test --prefix server
+```
+
 ## Useful API Query Examples
 
 - Restaurants with search/filter/pagination:
@@ -119,6 +126,6 @@ Includes integration coverage for:
 - Set production env vars for both apps.
 
 ## Demo Deliverables Placeholders
-- Live app: `<add-your-live-url>`
+- Live app: `https://gursha-gamma.vercel.app/`
 - Demo video (2-4 min): `<add-video-link>`
 - GitHub repo: `https://github.com/dag12y/Gursha`
