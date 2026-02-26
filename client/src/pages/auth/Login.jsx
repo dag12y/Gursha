@@ -16,21 +16,26 @@ import {
 export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
+            setIsSubmitting(true);
             await login(email, password);
             navigate("/restaurants");
         } catch (error) {
             console.error("Login failed:", error);
             toast.error(
                 error.response?.data?.message ||
-                    "Login failed. Please check your credentials and try again.",
+                error?.message ||
+                "Login failed. Please check your credentials and try again.",
             );
-            return;
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -66,16 +71,13 @@ export default function Login() {
                                 required
                             />
                         </div>
-                        <Button type="submit" className="w-full">
-                            Login
+                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting ? "Logging in..." : "Login"}
                         </Button>
                     </form>
                     <div className="mt-4 text-center text-sm">
-                        Don't have an account?{" "}
-                        <Link
-                            to="/register"
-                            className="text-primary hover:underline"
-                        >
+                        Don&apos;t have an account?{" "}
+                        <Link to="/register" className="text-primary hover:underline">
                             Sign up
                         </Link>
                     </div>

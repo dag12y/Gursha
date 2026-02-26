@@ -48,10 +48,17 @@ export function AuthProvider({ children }) {
             return null;
         }
 
-        const response = await getCurrentUserRequest();
-        const currentUser = response?.user ?? response?.data?.user ?? response?.data ?? null;
-        setUser(currentUser);
-        return currentUser;
+        try {
+            const response = await getCurrentUserRequest();
+            const currentUser = response?.user ?? response?.data?.user ?? response?.data ?? null;
+            setUser(currentUser);
+            return currentUser;
+        } catch (error) {
+            removeToken();
+            setTokenState(null);
+            setUser(null);
+            throw error;
+        }
     }, [setUser]);
 
     const login = useCallback(async (email, password) => {
@@ -65,13 +72,13 @@ export function AuthProvider({ children }) {
         setToken(nextToken);
         setTokenState(nextToken);
         await refreshUser();
-        toast.success("Logged in successfully!");
+        toast.success("Logged in successfully.");
         return response;
     }, [refreshUser]);
 
     const register = useCallback(async (name, email, password) => {
         const response = await registerRequest(name, email, password);
-        toast.success("Registered successfully!");
+        toast.success("Registered successfully. Please login.");
         return response;
     }, []);
 

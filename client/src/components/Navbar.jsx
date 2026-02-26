@@ -24,9 +24,9 @@ export default function Navbar() {
         refreshUser().catch(() => {});
     }, [isAuthenticated, user, refreshUser]);
 
-    function handleNavClick(item) {
+    async function handleNavClick(item) {
         if (item === "Logout") {
-            logout();
+            await logout();
             navigate("/login");
             return;
         }
@@ -92,7 +92,7 @@ export default function Navbar() {
                                         size="icon"
                                         title={item.key}
                                         aria-label={item.key}
-                                        onClick={() => handleNavClick(item.key)}
+                                        onClick={() => void handleNavClick(item.key)}
                                     >
                                         <Icon className="h-5 w-5" />
                                     </Button>

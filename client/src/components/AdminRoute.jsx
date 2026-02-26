@@ -5,9 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function AdminRoute({ children }) {
     const { isAuthenticated, user, refreshUser } = useAuth();
     const location = useLocation();
-    const [checkingUser, setCheckingUser] = useState(
-        Boolean(isAuthenticated && !user),
-    );
+    const [checkingUser, setCheckingUser] = useState(Boolean(isAuthenticated && !user));
 
     useEffect(() => {
         let isMounted = true;
