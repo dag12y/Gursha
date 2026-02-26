@@ -77,8 +77,6 @@ test("auth flow: register -> login -> get current user", async () => {
 
     const user = await User.findOne({ email });
     assert.ok(user);
-    user.isEmailVerified = true;
-    await user.save();
 
     const loginRes = await request(app).post("/api/auth/login").send({
         email,
@@ -103,10 +101,6 @@ test("reservation flow: diner creates and cancels reservation", async () => {
         email,
         password,
     });
-
-    const diner = await User.findOne({ email });
-    diner.isEmailVerified = true;
-    await diner.save();
 
     const loginRes = await request(app).post("/api/auth/login").send({
         email,

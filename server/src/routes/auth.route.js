@@ -5,8 +5,6 @@ import { isAdmin } from "../middleware/role.middleware.js";
 import {
     registerUser,
     loginUser,
-    verifyEmail,
-    resendVerificationEmail,
     getCurrentUser,
     getAllUsers,
     assignStaffRole,
@@ -41,27 +39,6 @@ authRouter.post(
         check("password", "Password is required").exists(),
     ],
     loginUser,
-);
-
-//@router POST /api/auth/verify-email
-//@desc Verify user email
-//@access Public
-authRouter.post(
-    "/verify-email",
-    [
-        check("email", "Please include a valid email").isEmail(),
-        check("token", "Verification token is required").not().isEmpty(),
-    ],
-    verifyEmail,
-);
-
-//@router POST /api/auth/resend-verification
-//@desc Resend verification email
-//@access Public
-authRouter.post(
-    "/resend-verification",
-    [check("email", "Please include a valid email").isEmail()],
-    resendVerificationEmail,
 );
 
 //@router GET /api/auth/me

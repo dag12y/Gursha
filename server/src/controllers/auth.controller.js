@@ -1,54 +1,11 @@
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import User from "../models/User.js";
 import Restaurant from "../models/Restaurant.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { buildVerificationEmailHtml, sendEmail } from "../config/mailer.js";
 
 dotenv.config();
-
-const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000;
-
-function createVerificationToken() {
-    const token = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + VERIFICATION_EXPIRY_MS);
-
-    return { token, tokenHash, expiresAt };
-}
-
-function getFrontendBaseUrl() {
-    return process.env.FRONTEND_BASE_URL || "http://localhost:5173";
-}
-
-function isEmailDeliveryFailure(error) {
-    return (
-        error?.code === "EMAIL_DELIVERY_FAILED" ||
-        error?.cause?.code === "ETIMEDOUT" ||
-        error?.cause?.code === "ECONNECTION" ||
-        error?.cause?.code === "ESOCKET"
-    );
-}
-
-async function sendVerificationEmail(user, rawToken) {
-    const frontendBase = getFrontendBaseUrl();
-    const verificationUrl = `${frontendBase}/verify-email?email=${encodeURIComponent(user.email)}&token=${rawToken}`;
-
-    await sendEmail({
-        to: user.email,
-        subject: "Verify your email",
-        html: buildVerificationEmailHtml({
-            appName: "Gursha",
-            verificationUrl,
-        }),
-    });
-
-    if (!process.env.SMTP_HOST && !process.env.RESEND_API_KEY) {
-        console.info(`Verification URL (dev): ${verificationUrl}`);
-    }
-}
 
 export async function registerUser(req, res) {
     try {
@@ -67,48 +24,20 @@ export async function registerUser(req, res) {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const { token, tokenHash, expiresAt } = createVerificationToken();
 
         const user = await User.create({
             name,
             email: normalizedEmail,
             password: hashedPassword,
-            isEmailVerified: false,
-            emailVerificationToken: tokenHash,
-            emailVerificationExpiresAt: expiresAt,
         });
 
-        try {
-            await sendVerificationEmail(user, token);
-        } catch (emailError) {
-            console.error("Verification email send failed during register:", emailError);
-            if (isEmailDeliveryFailure(emailError)) {
-                return res.status(201).json({
-                    message:
-                        "User registered, but verification email could not be sent right now. Please use resend verification shortly.",
-                    requiresVerification: true,
-                    email: user.email,
-                    user: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        isEmailVerified: user.isEmailVerified,
-                    },
-                });
-            }
-            throw emailError;
-        }
-
         return res.status(201).json({
-            message:
-                "User registered successfully. Please verify your email before login.",
-            requiresVerification: true,
+            message: "User registered successfully.",
             email: user.email,
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                isEmailVerified: user.isEmailVerified,
             },
         });
     } catch (error) {
@@ -139,14 +68,6 @@ export async function loginUser(req, res) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        if (!user.isEmailVerified) {
-            return res.status(403).json({
-                message: "Please verify your email before logging in.",
-                requiresVerification: true,
-                email: user.email,
-            });
-        }
-
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
             expiresIn: "1d",
         });
@@ -159,97 +80,6 @@ export async function loginUser(req, res) {
         return res
             .status(500)
             .json({ message: "Server error", error: error.message });
-    }
-}
-
-export async function verifyEmail(req, res) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    try {
-        const { email, token } = req.body;
-        const normalizedEmail = email.toLowerCase();
-        const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
-
-        const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(400).json({ message: "Invalid verification request" });
-        }
-
-        if (user.isEmailVerified) {
-            return res.status(200).json({ message: "Email is already verified" });
-        }
-
-        if (
-            !user.emailVerificationToken ||
-            user.emailVerificationToken !== tokenHash ||
-            !user.emailVerificationExpiresAt ||
-            user.emailVerificationExpiresAt < new Date()
-        ) {
-            return res.status(400).json({
-                message: "Verification link is invalid or has expired",
-            });
-        }
-
-        user.isEmailVerified = true;
-        user.emailVerificationToken = undefined;
-        user.emailVerificationExpiresAt = undefined;
-        await user.save();
-
-        return res.status(200).json({ message: "Email verified successfully" });
-    } catch (error) {
-        console.error("Verify email error:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
-    }
-}
-
-export async function resendVerificationEmail(req, res) {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    try {
-        const { email } = req.body;
-        const normalizedEmail = email.toLowerCase();
-
-        const user = await User.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(200).json({
-                message: "If this email exists, a verification link has been sent.",
-            });
-        }
-
-        if (user.isEmailVerified) {
-            return res.status(200).json({ message: "Email is already verified" });
-        }
-
-        const { token, tokenHash, expiresAt } = createVerificationToken();
-        user.emailVerificationToken = tokenHash;
-        user.emailVerificationExpiresAt = expiresAt;
-        await user.save();
-
-        try {
-            await sendVerificationEmail(user, token);
-        } catch (emailError) {
-            console.error("Resend verification email failed:", emailError);
-            if (isEmailDeliveryFailure(emailError)) {
-                return res.status(503).json({
-                    message:
-                        "Verification email service is temporarily unavailable. Please try again in a minute.",
-                });
-            }
-            throw emailError;
-        }
-
-        return res.status(200).json({
-            message: "Verification email sent successfully",
-        });
-    } catch (error) {
-        console.error("Resend verification error:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
     }
 }
 

@@ -33,18 +33,3 @@ export async function getAllUsers() {
     const response = await axiosInstance.get("/auth/users");
     return response.data?.users ?? [];
 }
-
-export async function verifyEmail(email, token) {
-    const response = await axiosInstance.post("/auth/verify-email", {
-        email,
-        token,
-    });
-    return response.data;
-}
-
-export async function resendVerificationEmail(email) {
-    const response = await axiosInstance.post("/auth/resend-verification", {
-        email,
-    });
-    return response.data;
-}

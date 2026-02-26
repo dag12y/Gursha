@@ -26,11 +26,6 @@ export default function Login() {
             navigate("/restaurants");
         } catch (error) {
             console.error("Login failed:", error);
-            if (error?.response?.status === 403 && error?.response?.data?.requiresVerification) {
-                const targetEmail = error?.response?.data?.email || email;
-                navigate(`/verify-email-sent?email=${encodeURIComponent(targetEmail)}`);
-                return;
-            }
             toast.error(
                 error.response?.data?.message ||
                     "Login failed. Please check your credentials and try again.",

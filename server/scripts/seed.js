@@ -47,21 +47,18 @@ async function seed() {
             email: "admin@gursha.dev",
             password: hashed,
             role: "admin",
-            isEmailVerified: true,
         },
         {
             name: "Demo Diner",
             email: "diner@gursha.dev",
             password: hashed,
             role: "diner",
-            isEmailVerified: true,
         },
         {
             name: "Demo Staff",
             email: "staff@gursha.dev",
             password: hashed,
             role: "staff",
-            isEmailVerified: true,
         },
     ]);
 
